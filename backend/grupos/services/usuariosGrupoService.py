@@ -5,8 +5,6 @@ from repositories.usuariosGrupoRepository import UsuariosGrupoRepository
 
 from repositories.rolGrupoRepository import RolGrupoRepository
 
-from ..usuarios.repositories.usuariosRepository import UsuariosRepository
-
 from schemas.usuariosGrupoSchema import UsuariosGrupoCreate
 
 from services.grupoService import GrupoService
@@ -17,7 +15,6 @@ class UsuariosGrupoService:
         self.grupo_service = GrupoService()
         self.usuarios_repo = UsuariosGrupoRepository()
         self.rol_repo = RolGrupoRepository()
-        self.usuarios_base_repo = UsuariosRepository()
 
     def add_usuario_a_grupo(self, db: Session, id_grupo: str, data: UsuariosGrupoCreate):
         

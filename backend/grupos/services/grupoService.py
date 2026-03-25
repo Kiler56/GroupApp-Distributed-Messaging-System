@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
+from repositories.usuariosGrupoRepository import UsuariosGrupoRepository
 from repositories.grupoRepository import GrupoRepository
 from repositories.rolGrupoRepository import RolGrupoRepository
-from ..usuarios.repositories.usuariosRepository import UsuariosRepository
 
 from schemas.grupoSchema import (
     GrupoCreate,
@@ -15,7 +15,7 @@ class GrupoService:
     def __init__(self):
         self.grupo_repo = GrupoRepository()
         self.rol_repo = RolGrupoRepository()
-        self.usuarios_repo = UsuariosRepository()
+        self.usuarios_repo = UsuariosGrupoRepository()
 
     # Get all grupos
     def get_grupos(self, db: Session):
@@ -44,14 +44,14 @@ class GrupoService:
                 "descripcion": "Administrador del grupo"
             })
 
-            member_role = self.rol_repo.create(db, {
+            self.rol_repo.create(db, {
                 "id_grupo": grupo.id_grupo,
                 "nombre": "Miembro",
                 "descripcion": "Miembro del grupo"
             })
 
             # - Agregar creador como admin
-            self.usuarios_repo.create(db, {
+            self.usuarios_repo.update(db, {
                 "id_grupo": grupo.id_grupo,
                 "id_usuario": user_id,
                 "id_rol_grupo": admin_role.id_rol_grupo
