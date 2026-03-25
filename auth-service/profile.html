@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Profile</title>
+</head>
+<body>
+
+<h2>Profile</h2>
+<button onclick="getProfile()">Ver perfil</button>
+
+<p id="result"></p>
+
+<script>
+async function getProfile() {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch("http://127.0.0.1:8000/auth/profile", {
+    method: "GET",
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+
+  const data = await response.json();
+
+  document.getElementById("result").innerText = JSON.stringify(data);
+}
+</script>
+
+</body>
+</html>
