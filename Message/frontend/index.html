@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid black;
+            padding: 10px;
+        }
+
+        select,
+        input,
+        button {
+            margin: 5px 0;
+            padding: 5px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <h2>Chat</h2>
+
+    <!-- USUARIO -->
+    <div>
+        👤 Usuario: <b id="user">Cargando...</b>
+    </div>
+
+    <br>
+
+    <!-- GRUPOS -->
+    <div>
+        💬 Grupo:
+        <select id="groupSelect">
+            <option value="">Cargando grupos...</option>
+        </select>
+    </div>
+
+    <hr>
+
+    <!-- MENSAJES -->
+    <div id="messages"></div>
+
+    <br>
+
+    <!-- INPUT -->
+    <input id="message" placeholder="Escribe un mensaje" />
+    <button onclick="sendMessage()">Enviar</button>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
