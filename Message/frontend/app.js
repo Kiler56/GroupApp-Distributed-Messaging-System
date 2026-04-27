@@ -1,12 +1,16 @@
 const API_MSG = "http://127.0.0.1:8001";
 const API_AUTH = "http://127.0.0.1:8000";
 
-// PEGA TU TOKEN AQUÍ
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoyLCJzdWIiOiJhcnR1cm9AZ21haWwuY29tIiwiZXhwIjoxNzc2NjY1MjM0fQ.1jgTNNWoz2CNCeAGIthx4VNvopui4x4c5kG6tYihSPc";
-
 let currentUser = null;
 let currentChat = null;
 
+
+const token = localStorage.getItem("token");
+
+if (!token) {
+    alert("Debes iniciar sesión");
+    window.location.href = "login.html";
+}
 
 async function loadUser() {
     try {
