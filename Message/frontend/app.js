@@ -1,9 +1,9 @@
 const API_MSG = "http://127.0.0.1:8001";
 const API_AUTH = "http://127.0.0.1:8000";
+const API_MEDIA = "http://127.0.0.1:8002";
 
 let currentUser = null;
 let currentChat = null;
-
 
 const token = localStorage.getItem("token");
 
@@ -33,7 +33,6 @@ async function loadUser() {
     }
 }
 
-
 async function loadGroups() {
     try {
         const res = await fetch(`${API_AUTH}/groups`, {
@@ -51,10 +50,8 @@ async function loadGroups() {
 
         groups.forEach(g => {
             const option = document.createElement("option");
-
             option.value = g.id_grupo;
             option.textContent = g.nombre;
-
             select.appendChild(option);
         });
 
@@ -90,10 +87,37 @@ async function loadMessages() {
         messages.reverse().forEach(msg => {
             const div = document.createElement("div");
 
-            if (msg.sender_id == currentUser.user_id) {
-                div.textContent = "🟢 Yo: " + msg.content;
-            } else {
-                div.textContent = "🔵 " + msg.sender_id + ": " + msg.content;
+            if (msg.type === "text") {
+                if (msg.sender_id == currentUser.user_id) {
+                    div.textContent = "🟢 Yo: " + msg.content;
+                } else {
+                    div.textContent = "🔵 " + msg.sender_id + ": " + msg.content;
+                }
+            }
+            if (msg.type === "image") {
+                const label = document.createElement("p");
+
+                if (msg.sender_id == currentUser.user_id) {
+                    label.textContent = "🟢 Yo (imagen):";
+                } else {
+                    label.textContent = "🔵 " + msg.sender_id + " (imagen):";
+                }
+
+                const button = document.createElement("button");
+                button.textContent = "Ver imagen";
+
+                button.onclick = () => {
+                    const img = document.createElement("img");
+                    img.src = `${API_MEDIA}/media/${msg.content}`;
+                    img.width = 200;
+
+                    div.innerHTML = "";
+                    div.appendChild(label);
+                    div.appendChild(img);
+                };
+
+                div.appendChild(label);
+                div.appendChild(button);
             }
 
             container.appendChild(div);
@@ -132,7 +156,6 @@ async function sendMessage() {
         console.log("RESPUESTA:", data);
 
         if (!res.ok) {
-            console.error("Error backend:", data);
             alert("Error al enviar mensaje");
             return;
         }
@@ -142,6 +165,48 @@ async function sendMessage() {
 
     } catch (err) {
         console.error("Error:", err);
+    }
+}
+
+
+async function sendImage() {
+    const file = document.getElementById("imageInput").files[0];
+
+    if (!file || !currentChat) {
+        alert("Selecciona una imagen y un grupo");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+        const res = await fetch(`${API_MEDIA}/media/upload`, {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await res.json();
+        console.log("MEDIA ID:", data);
+
+        await fetch(`${API_MSG}/messages/send`, {
+            method: "POST",
+            headers: {
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                chat_id: currentChat,
+                type: "image",
+                content: data.media_id
+            })
+        });
+
+        document.getElementById("imageInput").value = "";
+        loadMessages();
+
+    } catch (err) {
+        console.error("Error enviando imagen:", err);
     }
 }
 

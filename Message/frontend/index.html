@@ -32,14 +32,12 @@
 
     <h2>Chat</h2>
 
-    <!-- USUARIO -->
     <div>
         👤 Usuario: <b id="user">Cargando...</b>
     </div>
 
     <br>
 
-    <!-- GRUPOS -->
     <div>
         💬 Grupo:
         <select id="groupSelect">
@@ -49,14 +47,15 @@
 
     <hr>
 
-    <!-- MENSAJES -->
     <div id="messages"></div>
 
     <br>
 
-    <!-- INPUT -->
     <input id="message" placeholder="Escribe un mensaje" />
     <button onclick="sendMessage()">Enviar</button>
+
+    <input type="file" id="imageInput">
+    <button onclick="sendImage()">📷 Enviar Imagen</button>
 
     <script src="app.js"></script>
 
