@@ -1,6 +1,7 @@
 const API_MSG = "http://127.0.0.1:8001";
 const API_AUTH = "http://127.0.0.1:8000";
-const API_MEDIA = "http://127.0.0.1:8002";
+const API_GRUPOS = "http://127.0.0.1:8002"; // Apuntando al nuevo microservicio de grupos
+const API_MEDIA = "http://127.0.0.1:8002"; 
 
 let currentUser = null;
 let currentChat = null;
@@ -35,7 +36,8 @@ async function loadUser() {
 
 async function loadGroups() {
     try {
-        const res = await fetch(`${API_AUTH}/groups`, {
+        // Consultamos al microservicio de Grupos en el puerto 8002
+        const res = await fetch(`${API_GRUPOS}/groups`, {
             headers: {
                 "Authorization": "Bearer " + token
             }
@@ -55,6 +57,17 @@ async function loadGroups() {
             select.appendChild(option);
         });
 
+        // 🔥 LOGICA DE AUTO-SELECCION
+        const urlParams = new URLSearchParams(window.location.search);
+        const groupIdFromUrl = urlParams.get('group_id');
+
+        if (groupIdFromUrl) {
+            console.log("Detectado group_id en URL:", groupIdFromUrl);
+            select.value = groupIdFromUrl;
+            currentChat = groupIdFromUrl;
+            loadMessages();
+        }
+
     } catch (err) {
         console.error("Error cargando grupos:", err);
     }
@@ -64,6 +77,11 @@ async function loadGroups() {
 document.getElementById("groupSelect").addEventListener("change", function () {
     currentChat = this.value;
     console.log("Chat seleccionado:", currentChat);
+    
+    // Actualizar URL sin recargar para mantener consistencia
+    const newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?group_id=' + currentChat;
+    window.history.pushState({path:newurl},'',newurl);
+
     loadMessages();
 });
 

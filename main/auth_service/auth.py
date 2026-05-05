@@ -70,3 +70,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @router.get("/profile")
 def profile(user_id: int = Depends(get_current_user)):
     return {"user_id": user_id}
+
+@router.get("/verify/{user_id}")
+def verify_user(user_id: int):
+    db = SessionLocal()
+    user = db.query(User).filter(User.id_usuario == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"id": user.id_usuario, "username": user.username}

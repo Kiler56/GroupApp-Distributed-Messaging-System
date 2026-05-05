@@ -18,11 +18,11 @@ async function login() {
         const data = await res.json();
 
         if (res.ok) {
-            // 🔥 guardar token
+            // Guardar token localmente (para el chat)
             localStorage.setItem("token", data.access_token);
 
-            // 🔥 ir al chat
-            window.location.href = "index.html";
+            // Redirigir a Grupos PASANDO el token por URL 
+            window.location.href = `http://localhost:5173/?token=${data.access_token}`;
         } else {
             document.getElementById("error").innerText = "Credenciales incorrectas";
         }
