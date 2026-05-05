@@ -116,6 +116,55 @@ class UsuariosGrupoService:
 
         return {"message": "Usuario eliminado del grupo"}
 
+    def join_grupo(
+        self,
+        db: Session,
+        id_grupo: str,
+        user_id: int
+    ):
+        # 1. Validar grupo
+        grupo = self.grupo_service.get_grupo(db, id_grupo)
+
+        if grupo.privado:
+            raise HTTPException(
+                status_code=403,
+                detail="No puedes unirte directamente a un grupo privado"
+            )
+
+        # 2. Evitar duplicados
+        existing = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
+
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="Ya perteneces al grupo"
+            )
+
+        # 3. Buscar rol de "Miembro" para este grupo
+        rol_miembro = db.query(self.rol_repo.model).filter_by(id_grupo=id_grupo, nombre="Miembro").first()
+
+        if not rol_miembro:
+            # Si no existe, crearlo (como fallback aunque el create_grupo lo hace)
+            rol_miembro = self.rol_repo.create(db, {
+                "id_grupo": id_grupo,
+                "nombre": "Miembro",
+                "descripcion": "Miembro del grupo"
+            })
+            db.flush()
+
+        # 4. Crear relación
+        usuario_grupo = self.usuarios_repo.create(db, {
+            "id_grupo": id_grupo,
+            "id_usuario": str(user_id),
+            "id_rol_grupo": rol_miembro.id_rol_grupo,
+            "id_estado": "ACTIVO"
+        })
+
+        db.commit()
+        db.refresh(usuario_grupo)
+
+        return usuario_grupo
+
     def leave_grupo(
     self,
     db: Session,

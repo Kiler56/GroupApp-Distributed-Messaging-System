@@ -25,6 +25,15 @@ export const grupoService = {
     return data;
   },
 
+  getMyGroups: async (): Promise<Grupo[]> => {
+    const { data } = await axios.get(`${API_URL}/my-groups`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return data;
+  },
+
   getById: async (id: string): Promise<Grupo> => {
     const { data } = await api.get(`/${id}`);
     return data;
@@ -42,5 +51,21 @@ export const grupoService = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/${id}`);
+  },
+
+  join: async (id: string): Promise<void> => {
+    await axios.post(`${API_URL}/users-groups/${id}/join`, {}, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+  },
+
+  leave: async (id: string): Promise<void> => {
+    await axios.delete(`${API_URL}/users-groups/${id}/leave`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
   },
 };

@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from Grupos.models.rolGrupoModel import RolGrupo
 
 class RolGrupoRepository:
+    model = RolGrupo
 
     def get_by_grupo(self, db: Session, id_grupo: str):
         return db.query(RolGrupo).filter(

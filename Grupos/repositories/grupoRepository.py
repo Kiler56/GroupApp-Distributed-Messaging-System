@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from Grupos.models.grupoModel import Grupo
 
 class GrupoRepository:
+    model = Grupo
 
     def get_all(self, db: Session):
         return db.query(Grupo).all()

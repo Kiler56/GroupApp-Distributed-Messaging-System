@@ -22,6 +22,12 @@ class GrupoService:
     def get_grupos(self, db: Session):
         return self.grupo_repo.get_all(db)
 
+    # Get my grupos
+    def get_my_grupos(self, db: Session, user_id: int):
+        relaciones = self.usuarios_repo.get_by_usuario(db, str(user_id))
+        ids_grupos = [rel.id_grupo for rel in relaciones]
+        return db.query(self.grupo_repo.model).filter(self.grupo_repo.model.id_grupo.in_(ids_grupos)).all()
+
     # Get grupo por id
     def get_grupo(self, db: Session, id_grupo: str):
         grupo = self.grupo_repo.get_by_id(db, id_grupo)

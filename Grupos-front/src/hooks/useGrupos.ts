@@ -9,6 +9,13 @@ export const useGrupos = () => {
   });
 };
 
+export const useMyGrupos = () => {
+  return useQuery({
+    queryKey: ['my-grupos'],
+    queryFn: grupoService.getMyGroups,
+  });
+};
+
 export const useGrupo = (id: string) => {
   return useQuery({
     queryKey: ['grupos', id],
@@ -43,6 +50,26 @@ export const useDeleteGrupo = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => grupoService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grupos'] });
+    },
+  });
+};
+
+export const useJoinGrupo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => grupoService.join(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['grupos'] });
+    },
+  });
+};
+
+export const useLeaveGrupo = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => grupoService.leave(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grupos'] });
     },

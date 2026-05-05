@@ -53,6 +53,16 @@ def remove_usuario(
     )
 
 
+# Unirse a un grupo (SELF)
+@router.post("/users-groups/{id_grupo}/join", status_code=status.HTTP_201_CREATED)
+def join_grupo(
+    id_grupo: str,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user)
+):
+    return service.join_grupo(db, id_grupo, user_id)
+
+
 # Salir del grupo (SELF)
 @router.delete("/users-groups/{id_grupo}/leave")
 def leave_grupo(
