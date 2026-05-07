@@ -21,4 +21,4 @@ def read_messages(
 
 @router.put("/messages/{message_id}/read")
 def mark_as_read(message_id: str, user=Depends(get_current_user)):
-    return mark_message_as_read(message_id, user["id"])
+    return mark_message_as_read(message_id, str(user["user_id"]))

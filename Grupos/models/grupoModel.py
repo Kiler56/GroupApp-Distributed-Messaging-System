@@ -14,4 +14,5 @@ class Grupo(Base):
     id_usuario_crea = Column(String, nullable=False)
     privado = Column(Boolean, nullable=False)
     requiere_invitacion = Column(Boolean, nullable=False)
+    id_grupo_padre = Column(String, ForeignKey("grupo.id_grupo", ondelete="CASCADE"), nullable=True)
 

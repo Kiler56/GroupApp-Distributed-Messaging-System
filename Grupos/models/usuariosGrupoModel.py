@@ -20,6 +20,7 @@ class UsuariosGrupo(Base):
     # La integridad se valida vía API.
     id_usuario = Column(String, nullable=False)
     
-    id_rol_grupo = Column(String, ForeignKey("rol_grupo.id_rol_grupo", ondelete="CASCADE"), nullable=False)
+    # La integridad se valida vía API ya que los roles están en otro MS.
+    id_rol_grupo = Column(String, nullable=False)
     fecha_union = Column(DateTime, nullable=False, default=datetime.utcnow)
     id_estado = Column(String, ForeignKey("tipo_estado_usr_grp.id_estado"), nullable=False)

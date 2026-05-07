@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import requests
+from app.config import AUTH_SERVICE_URL
 
 security = HTTPBearer()
 
@@ -9,7 +10,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
     try:
         response = requests.get(
-            "http://127.0.0.1:8000/auth/profile",
+            f"{AUTH_SERVICE_URL}/auth/profile",
             headers={"Authorization": f"Bearer {token}"}
         )
 

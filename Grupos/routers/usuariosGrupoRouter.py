@@ -18,7 +18,7 @@ service = UsuariosGrupoService()
 
 
 # Agregar usuario al grupo
-@router.post("/users-groups/{id_grupo}/usuarios", status_code=status.HTTP_201_CREATED)
+@router.post("/users-groups/{id_grupo}/usuarios", response_model=UsuariosGrupoResponse, status_code=status.HTTP_201_CREATED)
 def add_usuario_a_grupo(
     id_grupo: str,
     data: UsuariosGrupoCreate,
@@ -51,6 +51,17 @@ def remove_usuario(
         id_usuario,
         user_id
     )
+
+# Actualizar rol de usuario
+@router.put("/users-groups/{id_grupo}/usuarios/{id_usuario}")
+def update_usuario_rol(
+    id_grupo: str,
+    id_usuario: int,
+    data: UsuariosGrupoCreate,
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user)
+):
+    return service.update_usuario_grupo(db, id_grupo, id_usuario, data, user_id)
 
 
 # Unirse a un grupo (SELF)

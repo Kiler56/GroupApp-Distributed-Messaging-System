@@ -6,22 +6,32 @@ Write-Host "Iniciando Ecosistema de GroupApp..." -ForegroundColor Cyan
 
 # 0. Instalar dependencias necesarias
 Write-Host "Verificando dependencias..." -ForegroundColor Gray
-pip install fastapi uvicorn sqlalchemy python-jose[cryptography] passlib[bcrypt] python-multipart httpx uuid6 pymongo pika
+pip install fastapi uvicorn sqlalchemy python-jose[cryptography] passlib[bcrypt] python-multipart httpx uuid6 pymongo pika grpcio grpcio-tools protobuf
 
-# 1. Auth Service (Backend Principal) - Puerto 8000
-Write-Host "Arrancando Auth Service en puerto 8000..." -ForegroundColor Yellow
-# Ejecutamos desde la carpeta 'main' para que el modulo 'auth_service' sea localizable
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd main; python -m uvicorn auth_service.main:app --port 8000"
+# 1. Roles Service (gRPC) - Puerto 50051
+Write-Host "Arrancando Roles Service..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Roles; .\run-dev.ps1"
+
+# 2. Auth Service (Backend Principal + gRPC) - Puerto 8000 / 50052
+Write-Host "Arrancando Auth Service..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Auth; .\run-dev.ps1"
 
 # 2. Mensajería Backend - Puerto 8001
-Write-Host "Arrancando Mensajeria Service en puerto 8001..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Message; python -m uvicorn app.main:app --port 8001"
+Write-Host "Arrancando Mensajeria Service..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Message; .\run-dev.ps1"
 
 # 3. Grupos Service - Puerto 8002
-Write-Host "Arrancando Grupos Service en puerto 8002..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "python -m uvicorn Grupos.main:app --port 8002"
+Write-Host "Arrancando Grupos Service..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Grupos; .\run-dev.ps1"
 
-# 4. Frontend de Mensajeria y Login - Puerto 5500
+# 4. Media Service - Puerto 8003
+Write-Host "Arrancando Media Service..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd MediaService; .\run-dev.ps1"
+
+
+
+# 5. Frontend de Mensajeria y Login - Puerto 5500
+
 Write-Host "Arrancando Frontend (Mensajes/Login) en puerto 5500..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Message/frontend; python -m http.server 5500"
 

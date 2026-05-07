@@ -19,6 +19,11 @@ service = GrupoService()
 def get_grupos(db: Session = Depends(get_db)):
     return service.get_grupos(db)
 
+# Get subgroups
+@router.get("/groups/{id_grupo}/subgroups", response_model=List[GrupoResponse])
+def get_subgroups(id_grupo: str, db: Session = Depends(get_db), user_id: int = Depends(get_current_user)):
+    return service.get_subgroups(db, id_grupo, user_id)
+
 # Get my grupos
 @router.get("/my-groups", response_model=List[GrupoResponse])
 def get_my_grupos(
@@ -60,3 +65,43 @@ def delete_grupo(
 ):
     service.delete_grupo(db, id_grupo, user_id)
     return None
+
+# Get roles del grupo (vía gRPC)
+@router.get("/{id_grupo}/roles")
+def get_group_roles(id_grupo: str):
+    return service.get_group_roles(id_grupo)
+
+# Crear rol
+@router.post("/{id_grupo}/roles")
+def create_role(id_grupo: str, data: dict, user_id: int = Depends(get_current_user)):
+    return service.create_role(id_grupo, data, user_id)
+
+# Actualizar rol
+@router.put("/{id_grupo}/roles/{id_rol_grupo}")
+def update_role(id_grupo: str, id_rol_grupo: str, data: dict, user_id: int = Depends(get_current_user)):
+    return service.update_role(id_grupo, id_rol_grupo, data, user_id)
+
+# Eliminar rol
+@router.delete("/{id_grupo}/roles/{id_rol_grupo}")
+def delete_role(id_grupo: str, id_rol_grupo: str, user_id: int = Depends(get_current_user)):
+    return service.delete_role(id_grupo, id_rol_grupo, user_id)
+
+# Obtener todos los recursos/permisos disponibles
+@router.get("/resources/all")
+def get_all_resources():
+    return service.get_all_resources()
+
+# Asignar permiso a rol
+@router.post("/{id_grupo}/roles/{id_rol_grupo}/permissions/{id_recurso}")
+def assign_permission(id_grupo: str, id_rol_grupo: str, id_recurso: str, user_id: int = Depends(get_current_user)):
+    return service.assign_permission(id_grupo, id_rol_grupo, id_recurso, user_id)
+
+# Quitar permiso a rol
+@router.delete("/{id_grupo}/roles/{id_rol_grupo}/permissions/{id_recurso}")
+def remove_permission(id_grupo: str, id_rol_grupo: str, id_recurso: str, user_id: int = Depends(get_current_user)):
+    return service.remove_permission(id_grupo, id_rol_grupo, id_recurso, user_id)
+
+# Invitar usuario por email (vía gRPC al MS Auth)
+@router.post("/{id_grupo}/invite")
+def invite_user(id_grupo: str, data: dict, user_id: int = Depends(get_current_user)):
+    return service.invite_by_email(id_grupo, data.get("email"), user_id)

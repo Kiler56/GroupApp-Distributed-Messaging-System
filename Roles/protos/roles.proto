@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package roles;
+
+service RoleService {
+  rpc GetRolesByGrupo(GetRolesByGrupoRequest) returns (GetRolesByGrupoResponse);
+  rpc GetRoleById(GetRoleByIdRequest) returns (RoleResponse);
+  rpc CreateRole(CreateRoleRequest) returns (RoleResponse);
+  rpc UpdateRole(UpdateRoleRequest) returns (RoleResponse);
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+  rpc AssignResourceToRole(AssignResourceRequest) returns (RoleResourceResponse);
+  rpc RemoveResourceFromRole(RemoveResourceRequest) returns (DeleteRoleResponse);
+  rpc GetResourcesByRole(GetResourcesByRoleRequest) returns (GetResourcesByRoleResponse);
+  rpc GetAllResources(Empty) returns (GetAllResourcesResponse);
+}
+
+message Empty {}
+
+message UpdateRoleRequest {
+  string id_rol_grupo = 1;
+  string nombre = 2;
+  string descripcion = 3;
+}
+
+message RemoveResourceRequest {
+  string id_rol_grupo = 1;
+  string id_recurso = 2;
+}
+
+message ResourceResponse {
+  string id_recurso = 1;
+  string nombre_recurso = 2;
+  string codigo_interno = 3;
+}
+
+message GetAllResourcesResponse {
+  repeated ResourceResponse resources = 1;
+}
+
+message RoleResponse {
+  string id_rol_grupo = 1;
+  string id_grupo = 2;
+  string nombre = 3;
+  string descripcion = 4;
+  bool activo = 5;
+}
+
+message GetRolesByGrupoRequest {
+  string id_grupo = 1;
+}
+
+message GetRolesByGrupoResponse {
+  repeated RoleResponse roles = 1;
+}
+
+message GetRoleByIdRequest {
+  string id_rol_grupo = 1;
+}
+
+message CreateRoleRequest {
+  string id_grupo = 1;
+  string nombre = 2;
+  string descripcion = 3;
+}
+
+message DeleteRoleRequest {
+  string id_rol_grupo = 1;
+}
+
+message DeleteRoleResponse {
+  bool success = 1;
+}
+
+message AssignResourceRequest {
+  string id_rol_grupo = 1;
+  string id_recurso = 2;
+}
+
+message RoleResourceResponse {
+  string id_rol_recurso = 1;
+  string id_rol_grupo = 2;
+  string id_recurso = 3;
+}
+
+message GetResourcesByRoleRequest {
+  string id_rol_grupo = 1;
+}
+
+message GetResourcesByRoleResponse {
+  repeated RoleResourceResponse resources = 1;
+}

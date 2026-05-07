@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import threading
 from app.rabbitmq import consume_messages
 
+from app.config import ALLOWED_ORIGINS
+
 threading.Thread(target=consume_messages, daemon=True).start()
 
 app = FastAPI()
@@ -12,7 +14,7 @@ app.include_router(router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -6,6 +6,7 @@ export interface Grupo {
   requiere_invitacion: boolean;
   fecha_creacion: string;
   id_usuario_crea: string;
+  id_grupo_padre?: string;
 }
 
 export interface GrupoCreate {
@@ -13,6 +14,7 @@ export interface GrupoCreate {
   descripcion?: string;
   privado?: boolean;
   requiere_invitacion?: boolean;
+  id_grupo_padre?: string;
 }
 
 export interface GrupoUpdate {

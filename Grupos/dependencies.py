@@ -6,8 +6,7 @@ import os
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8000/auth/login")
 
-# URL del microservicio de autenticacion 
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://localhost:8000")
+from Grupos.config import AUTH_SERVICE_URL
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
     async with httpx.AsyncClient() as client:

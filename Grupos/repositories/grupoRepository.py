@@ -5,7 +5,10 @@ class GrupoRepository:
     model = Grupo
 
     def get_all(self, db: Session):
-        return db.query(Grupo).all()
+        return db.query(Grupo).filter(Grupo.id_grupo_padre == None).all()
+
+    def get_subgroups(self, db: Session, id_padre: str):
+        return db.query(Grupo).filter(Grupo.id_grupo_padre == id_padre).all()
 
     def get_by_id(self, db: Session, id_grupo: str):
         return db.query(Grupo).filter(

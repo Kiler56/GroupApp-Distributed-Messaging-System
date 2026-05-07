@@ -7,17 +7,19 @@ class GrupoModel(BaseModel):
     descripcion: Optional[str] = None
     privado: bool = False
     requiere_invitacion: bool = False
+    id_grupo_padre: Optional[str] = None
 
 class GrupoCreate(GrupoModel):
     pass  # id_usuario_crea viene del backend (auth)
 
-class GrupoUpdate(GrupoModel):
+class GrupoUpdate(BaseModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     privado: Optional[bool] = None
     requiere_invitacion: Optional[bool] = None
+    id_grupo_padre: Optional[str] = None
 
-class GrupoDelete(GrupoModel):
+class GrupoDelete(BaseModel):
     id_grupo: str
 
 class GrupoResponse(GrupoModel):

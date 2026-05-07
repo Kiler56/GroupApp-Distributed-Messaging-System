@@ -1,9 +1,10 @@
 import React from 'react';
 import { useGrupos, useMyGrupos, useDeleteGrupo, useJoinGrupo, useLeaveGrupo } from '../hooks/useGrupos';
 import { useGrupoStore } from '../hooks/useGrupoStore';
-import { navigateToMessages } from '../helpers/navigation';
+import { useNavigate } from 'react-router-dom';
 
 export const GrupoList: React.FC = () => {
+  const navigate = useNavigate();
   const { data: todosLosGrupos, isLoading: loadingTodos } = useGrupos();
   const { data: misGrupos, isLoading: loadingMis } = useMyGrupos();
   const { mutate: deleteGrupo } = useDeleteGrupo();
@@ -11,7 +12,7 @@ export const GrupoList: React.FC = () => {
   const { mutate: leaveGrupo } = useLeaveGrupo();
   const { setSelectedGrupo, setModalOpen } = useGrupoStore();
 
-  if (loadingTodos || loadingMis) return <div className="p-8 text-center text-gray-500">Cargando grupos...</div>;
+  if (loadingTodos || loadingMis) return <div className="p-8 text-center text-gray-500 font-bold">Cargando grupos...</div>;
 
   const misGruposIds = new Set(misGrupos?.map(g => g.id_grupo));
 
@@ -106,7 +107,7 @@ export const GrupoList: React.FC = () => {
                   {esMiembro ? (
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => navigateToMessages(grupo.id_grupo)}
+                        onClick={() => navigate(`/chat/${grupo.id_grupo}`)}
                         className="bg-indigo-600 text-white hover:bg-indigo-700 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-100 transition-all transform active:scale-95"
                       >
                         Mensajes

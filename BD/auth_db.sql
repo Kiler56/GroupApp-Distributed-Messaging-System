@@ -1,0 +1,9 @@
+-- SCRIPT DE CREACIÓN DE BASE DE DATOS: AUTH_DB
+-- Motor: PostgreSQL
+
+CREATE TABLE IF NOT EXISTS usuario (
+    id_usuario SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL
+);

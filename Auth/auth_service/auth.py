@@ -69,7 +69,16 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
 # ========================
 @router.get("/profile")
 def profile(user_id: int = Depends(get_current_user)):
-    return {"user_id": user_id}
+    db = SessionLocal()
+    user = db.query(User).filter(User.id_usuario == user_id).first()
+    db.close()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "user_id": user.id_usuario,
+        "username": user.username,
+        "email": user.email
+    }
 
 @router.get("/verify/{user_id}")
 def verify_user(user_id: int):
@@ -78,3 +87,19 @@ def verify_user(user_id: int):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return {"id": user.id_usuario, "username": user.username}
+
+@router.get("/users")
+def get_all_users(user_id: int = Depends(get_current_user)):
+    db = SessionLocal()
+    users = db.query(User).all()
+    db.close()
+    return [{"id_usuario": u.id_usuario, "username": u.username, "email": u.email} for u in users]
+
+@router.get("/user-by-email/{email}")
+def get_user_by_email(email: str):
+    db = SessionLocal()
+    user = db.query(User).filter(User.email == email).first()
+    db.close()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"id_usuario": user.id_usuario, "username": user.username, "email": user.email}
