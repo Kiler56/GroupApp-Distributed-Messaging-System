@@ -16,10 +16,10 @@ import json
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 
-from app.config import UPLOAD_DIR, METADATA_FILE
-
 router = APIRouter()
 
+UPLOAD_DIR = "uploads"
+METADATA_FILE = "media_metadata.json"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def load_metadata():

@@ -9,8 +9,6 @@ import sys
 import os
 from concurrent import futures
 
-from auth_service.config import GRPC_PORT, ALLOWED_ORIGINS
-
 # Añadir el directorio actual al path para que gRPC encuentre los módulos generados
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
@@ -42,18 +40,48 @@ class AuthGRPCService(auth_pb2_grpc.AuthServiceServicer):
             email=user.email
         )
 
+    def VerifyToken(self, request, context):
+        from jose import jwt, JWTError
+        from auth_service.config import SECRET_KEY, ALGORITHM
+        try:
+            payload = jwt.decode(request.token, SECRET_KEY, algorithms=[ALGORITHM])
+            user_id = payload.get("user_id")
+            if user_id is None:
+                context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+                context.set_details('Invalid token')
+                return auth_pb2.VerifyTokenResponse()
+            
+            db = SessionLocal()
+            user = db.query(User).filter(User.id_usuario == user_id).first()
+            db.close()
+            
+            if not user:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details('User not found')
+                return auth_pb2.VerifyTokenResponse()
+                
+            return auth_pb2.VerifyTokenResponse(
+                user_id=user.id_usuario,
+                username=user.username,
+                email=user.email
+            )
+        except JWTError:
+            context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+            context.set_details('Token expired or invalid')
+            return auth_pb2.VerifyTokenResponse()
+
 def serve_grpc():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     auth_pb2_grpc.add_AuthServiceServicer_to_server(AuthGRPCService(), server)
-    server.add_insecure_port(f'[::]:{GRPC_PORT}')
+    server.add_insecure_port('[::]:50052')
     server.start()
-    print(f"Auth gRPC server started on port {GRPC_PORT}")
+    print("Auth gRPC server started on port 50052")
     server.wait_for_termination()
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

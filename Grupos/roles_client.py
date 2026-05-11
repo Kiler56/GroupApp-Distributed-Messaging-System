@@ -3,12 +3,10 @@ import grpc
 import Roles.protos.roles_pb2 as roles_pb2
 import Roles.protos.roles_pb2_grpc as roles_pb2_grpc
 
-from Grupos.config import ROLES_SERVICE_HOST, ROLES_SERVICE_PORT
-
 class RolesClient:
     def __init__(self):
-        host = ROLES_SERVICE_HOST
-        port = ROLES_SERVICE_PORT
+        host = os.getenv("ROLES_SERVICE_HOST", "localhost")
+        port = os.getenv("ROLES_SERVICE_PORT", "50051")
         self.channel = grpc.insecure_channel(f'{host}:{port}')
         self.stub = roles_pb2_grpc.RoleServiceStub(self.channel)
 

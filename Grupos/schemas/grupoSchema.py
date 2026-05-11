@@ -25,7 +25,7 @@ class GrupoDelete(BaseModel):
 class GrupoResponse(GrupoModel):
     id_grupo: str
     fecha_creacion: datetime
-    id_usuario_crea: str
+    id_usuario_crea: int  # Cambiado a int para coincidir con el tipo de ID de Auth
 
     class Config:
         from_attributes = True

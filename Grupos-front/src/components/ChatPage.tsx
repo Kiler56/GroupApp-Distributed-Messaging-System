@@ -79,6 +79,10 @@ export const ChatPage: React.FC = () => {
   const [editGroupPrivado, setEditGroupPrivado] = useState(false);
   const [editGroupInvitacion, setEditGroupInvitacion] = useState(false);
   const [activeTab, setActiveRoleTab] = useState<'info' | 'roles'>('info');
+  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ title: string, message: string, onConfirm: () => void } | null>(null);
+  const [promptModal, setPromptModal] = useState<{ title: string, message: string, value: string, onConfirm: (val: string) => void } | null>(null);
+  
   const panelRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -104,39 +108,50 @@ export const ChatPage: React.FC = () => {
         return;
       }
       try {
-        const [user, group, users, roles, resources, usersList, myGroups] = await Promise.all([
-          authService.getProfile(token),
+        setMessages([]); // Limpiar mensajes al cambiar de discusión
+        fetchMessages(); // Carga inmediata de mensajes
+        
+        // 1. Cargar datos específicos de la discusión actual (Siempre necesario)
+        const [group, users, roles] = await Promise.all([
           grupoService.getById(groupId),
           messageService.getGroupUsers(groupId),
-          grupoService.getRoles(groupId),
-          grupoService.getAllResources(),
-          authService.getAllUsers(),
-          grupoService.getMyGroups()
+          grupoService.getRoles(groupId)
         ]);
         
-        setCurrentUser(user);
         setCurrentGroup(group);
         setGroupUsers(users);
         setGroupRoles(roles);
-        setAllResources(resources);
-        setAllUsers(usersList);
-        setMyGroupsIds(new Set(myGroups.map(g => g.id_grupo)));
 
-        // Si es un subgrupo, cargar el padre para el sidebar y discusiones
+        // 2. Cargar datos globales solo si no están presentes
+        if (!currentUser) {
+          const [user, resources, usersList, myGroups] = await Promise.all([
+            authService.getProfile(token),
+            grupoService.getAllResources(),
+            authService.getAllUsers(),
+            grupoService.getMyGroups()
+          ]);
+          setCurrentUser(user);
+          setAllResources(resources);
+          setAllUsers(usersList);
+          setMyGroupsIds(new Set(myGroups.map(g => g.id_grupo)));
+        }
 
+        // 3. Cargar datos del grupo padre/familia solo si ha cambiado el contexto del grupo
         const effectiveParentId = group.id_grupo_padre || group.id_grupo;
         
         const [pGroup, sGroups, pUsers] = await Promise.all([
-          group.id_grupo_padre ? grupoService.getById(group.id_grupo_padre) : Promise.resolve(group),
-          grupoService.getSubgroups(effectiveParentId),
-          group.id_grupo_padre ? messageService.getGroupUsers(group.id_grupo_padre) : Promise.resolve([])
+          (!parentGroup || parentGroup.id_grupo !== effectiveParentId) 
+            ? (group.id_grupo_padre ? grupoService.getById(group.id_grupo_padre) : Promise.resolve(group))
+            : Promise.resolve(parentGroup),
+          (!parentGroup || parentGroup.id_grupo !== effectiveParentId)
+            ? grupoService.getSubgroups(effectiveParentId)
+            : Promise.resolve(subgroups),
+          messageService.getGroupUsers(effectiveParentId) // Siempre refrescar miembros del padre para invitaciones
         ]);
 
         setParentGroup(pGroup);
         setSubgroups(sGroups);
         setParentGroupUsers(pUsers);
-        
-        await fetchMessages();
       } catch (err) {
         console.error(err);
         navigate('/login');
@@ -148,8 +163,23 @@ export const ChatPage: React.FC = () => {
   }, [groupId]);
 
   useEffect(() => {
-    const interval = setInterval(fetchMessages, 3000);
-    return () => clearInterval(interval);
+    if (!groupId) return;
+
+    const wsUrl = `ws://localhost:8001/ws/${groupId}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'new_message') {
+            fetchMessages();
+        }
+    };
+
+    ws.onclose = () => console.log("WebSocket desconectado, reintentando...");
+    
+    return () => {
+        ws.close();
+    };
   }, [groupId]);
 
   useEffect(scrollToBottom, [messages]);
@@ -205,22 +235,36 @@ export const ChatPage: React.FC = () => {
     }
   };
 
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   const handleCreateSubgroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubgroupName.trim() || !parentGroup) return;
     
     try {
-      await grupoService.create({
+      const newGroup = await grupoService.create({
         nombre: newSubgroupName,
         id_grupo_padre: parentGroup.id_grupo,
-        privado: parentGroup.privado
+        privado: true // Las discusiones deben ser privadas por defecto
       });
+      
+      // Añadir al creador a la discusión inmediatamente
+      const myGroups = await grupoService.getMyGroups();
+      setMyGroupsIds(new Set(myGroups.map(g => g.id_grupo)));
+      
       const sGroups = await grupoService.getSubgroups(parentGroup.id_grupo);
       setSubgroups(sGroups);
       setShowSubgroupModal(false);
       setNewSubgroupName('');
+      
+      // Opcional: navegar a la nueva discusión
+      navigate(`/chat/${newGroup.id_grupo}`);
+      showNotification("Discusión creada correctamente", "success");
     } catch (err) {
-      alert("Error al crear discusión");
+      showNotification("Error al crear discusión", "error");
     }
   };
 
@@ -263,8 +307,9 @@ export const ChatPage: React.FC = () => {
       }
       const roles = await grupoService.getRoles(groupId);
       setGroupRoles(roles);
+      showNotification("Permisos actualizados", "success");
     } catch (err) {
-      alert("Error al modificar permisos");
+      showNotification("Error al modificar permisos", "error");
     }
   };
 
@@ -282,20 +327,29 @@ export const ChatPage: React.FC = () => {
       setNewRoleName('');
       setEditingRoleId(null);
       setShowRoleForm(false);
+      showNotification("Rol guardado correctamente", "success");
     } catch (err) {
-      alert("Error al gestionar rol");
+      showNotification("Error al gestionar rol", "error");
     }
   };
 
   const handleDeleteRole = async (roleId: string) => {
-    if (!groupId || !confirm("¿Eliminar este rol definitivamente?")) return;
-    try {
-      await grupoService.deleteRole(groupId, roleId);
-      const roles = await grupoService.getRoles(groupId);
-      setGroupRoles(roles);
-    } catch (err) {
-      alert("Error al eliminar rol");
-    }
+    if (!groupId) return;
+    setConfirmModal({
+      title: "Eliminar Rol",
+      message: "¿Estás seguro de que deseas eliminar este rol definitivamente?",
+      onConfirm: async () => {
+        try {
+          await grupoService.deleteRole(groupId, roleId);
+          const roles = await grupoService.getRoles(groupId);
+          setGroupRoles(roles);
+          setConfirmModal(null);
+          showNotification("Rol eliminado", "success");
+        } catch (err) {
+          showNotification("Error al eliminar rol", "error");
+        }
+      }
+    });
   };
 
   const handleStartDM = async (targetUser: any) => {
@@ -351,40 +405,60 @@ export const ChatPage: React.FC = () => {
 
         setShowUserModal(false);
         navigate(`/chat/${newGroup.id_grupo}`);
-    } catch (err) {
+      } catch (err) {
         console.error("Error iniciando DM:", err);
-        alert("Error al iniciar conversación privada. Es posible que el grupo se haya creado pero hubo un problema al añadir al otro miembro.");
-    }
-  };
+        showNotification("Error al iniciar conversación privada", "error");
+      }
+    };
 
   const handleUpdateUserRole = async (userId: number) => {
-    const roleName = prompt("Nombre del nuevo rol (ej: Moderador, Miembro):");
-    if (!roleName || !groupId) return;
+    if (!groupId) return;
     
-    const role = groupRoles.find(r => r.nombre.toLowerCase() === roleName.toLowerCase());
-    if (!role) {
-        alert("Rol no encontrado en el grupo");
-        return;
-    }
+    setPromptModal({
+        title: "Cambiar Rol",
+        message: "Ingresa el nombre del nuevo rol (ej: Moderador, Miembro):",
+        value: "",
+        onConfirm: async (roleName) => {
+            if (!roleName) {
+                setPromptModal(null);
+                return;
+            }
+            const role = groupRoles.find(r => r.nombre.toLowerCase() === roleName.toLowerCase());
+            if (!role) {
+                showNotification("Rol no encontrado en el grupo", "error");
+                return;
+            }
 
-    try {
-        await grupoService.updateUserRole(groupId, userId, role.id_rol_grupo);
-        const users = await messageService.getGroupUsers(groupId);
-        setGroupUsers(users);
-    } catch (err: any) {
-        alert(err.response?.data?.detail || "Error al cambiar rol");
-    }
+            try {
+                await grupoService.updateUserRole(groupId, userId, role.id_rol_grupo);
+                const users = await messageService.getGroupUsers(groupId);
+                setGroupUsers(users);
+                setPromptModal(null);
+                showNotification("Rol de usuario actualizado", "success");
+            } catch (err: any) {
+                showNotification(err.response?.data?.detail || "Error al cambiar rol", "error");
+            }
+        }
+    });
   };
 
   const handleRemoveUser = async (userId: number) => {
-    if (!groupId || !confirm("¿Eliminar usuario del grupo?")) return;
-    try {
-        await grupoService.removeUser(groupId, userId);
-        const users = await messageService.getGroupUsers(groupId);
-        setGroupUsers(users);
-    } catch (err) {
-        alert("Error al eliminar usuario");
-    }
+    if (!groupId) return;
+    setConfirmModal({
+        title: "Eliminar Usuario",
+        message: "¿Estás seguro de que deseas eliminar a este usuario del grupo?",
+        onConfirm: async () => {
+            try {
+                await grupoService.removeUser(groupId, userId);
+                const users = await messageService.getGroupUsers(groupId);
+                setGroupUsers(users);
+                setConfirmModal(null);
+                showNotification("Usuario eliminado del grupo", "success");
+            } catch (err) {
+                showNotification("Error al eliminar usuario", "error");
+            }
+        }
+    });
   };
 
   const handleInviteByEmail = async (e: React.FormEvent) => {
@@ -400,13 +474,13 @@ export const ChatPage: React.FC = () => {
       setGroupUsers(users);
       setShowInviteModal(false);
       setInviteEmail('');
-      alert(`Usuario ${user.username} agregado correctamente.`);
+      showNotification(`Usuario ${user.username} agregado correctamente`, "success");
       
     } catch (err: any) {
       if (err.response?.status === 404) {
-        alert("No se encontró ningún usuario con ese correo electrónico");
+        showNotification("No se encontró ningún usuario con ese correo electrónico", "error");
       } else {
-        alert(err.response?.data?.detail || "Error al invitar usuario");
+        showNotification(err.response?.data?.detail || "Error al invitar usuario", "error");
       }
     }
   };
@@ -423,9 +497,34 @@ export const ChatPage: React.FC = () => {
       });
       setCurrentGroup(updated);
       setIsEditingGroup(false);
+      showNotification("Grupo actualizado correctamente", "success");
     } catch (err) {
-      alert("Error al actualizar grupo");
+      showNotification("Error al actualizar grupo", "error");
     }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!groupId || !currentGroup) return;
+    
+    setConfirmModal({
+      title: currentGroup.id_grupo_padre ? "Eliminar Discusión" : "Eliminar Grupo",
+      message: `¿Estás seguro de que deseas eliminar "${currentGroup.nombre}"? Esta acción no se puede deshacer y eliminará permanentemente todos los mensajes, roles y miembros.`,
+      onConfirm: async () => {
+        try {
+          await grupoService.delete(groupId);
+          setConfirmModal(null);
+          showNotification(currentGroup.id_grupo_padre ? "Discusión eliminada" : "Grupo eliminado", "success");
+          
+          if (currentGroup.id_grupo_padre) {
+            navigate(`/chat/${currentGroup.id_grupo_padre}`);
+          } else {
+            navigate('/');
+          }
+        } catch (err) {
+          showNotification("Error al eliminar", "error");
+        }
+      }
+    });
   };
 
   const handleWheel = (e: React.WheelEvent) => {
@@ -496,9 +595,9 @@ export const ChatPage: React.FC = () => {
         setGroupUsers(users);
         setShowDiscInviteModal(false);
         setSelectedUsers([]);
-        alert("Miembros agregados exitosamente");
+        showNotification("Miembros agregados exitosamente", "success");
     } catch (err) {
-        alert("Error al agregar algunos miembros");
+        showNotification("Error al agregar algunos miembros", "error");
     }
   };
 
@@ -511,7 +610,7 @@ export const ChatPage: React.FC = () => {
         setMyGroupsIds(new Set(myGroups.map(g => g.id_grupo)));
         navigate(`/chat/${discId}`);
     } catch (err) {
-        alert("No puedes unirte a esta discusión");
+        showNotification("No puedes unirte a esta discusión", "error");
     }
   };
 
@@ -727,9 +826,13 @@ export const ChatPage: React.FC = () => {
       {/* Sidebar Izquierda: Subgrupos/Discusiones */}
       <aside className="w-64 bg-slate-50 border-r border-slate-200 flex flex-col">
         <div className="p-4 border-b border-slate-200 bg-white flex justify-between items-center">
-          <h3 className="font-bold text-slate-700 flex items-center gap-2 truncate pr-2">
-            <Hash size={18} className="flex-shrink-0" /> {parentGroup?.nombre}
-          </h3>
+          <button 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 font-bold text-slate-700 hover:text-indigo-600 transition-colors truncate pr-2 group/back"
+          >
+            <ArrowLeft size={18} className="flex-shrink-0 group-hover/back:-translate-x-0.5 transition-transform" /> 
+            <span className="truncate">Grupos</span>
+          </button>
           <button 
             onClick={() => setShowSubgroupModal(true)} 
             className="p-1.5 hover:bg-indigo-50 rounded-lg text-indigo-600 transition-colors"
@@ -739,7 +842,7 @@ export const ChatPage: React.FC = () => {
           </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-2">
           {/* Discusión Principal Fijada */}
           <button
             onClick={() => navigate(`/chat/${parentGroup?.id_grupo}`)}
@@ -753,59 +856,51 @@ export const ChatPage: React.FC = () => {
             <span className="truncate">General</span>
           </button>
 
-          <div className="px-3 pt-4 pb-2">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tus Discusiones</p>
+          <div className="relative ml-4 pl-2 border-l-2 border-slate-200 space-y-1">
+            {subgroups.filter(sg => myGroupsIds.has(sg.id_grupo)).map((sg, idx, arr) => (
+              <div key={sg.id_grupo} className="relative flex items-center">
+                {/* Conector visual tipo Tree */}
+                <div className="absolute -left-[10px] top-1/2 -translate-y-1/2 w-2.5 h-[2px] bg-slate-200"></div>
+                
+                <button
+                  onClick={() => navigate(`/chat/${sg.id_grupo}`)}
+                  className={`flex-1 text-left px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                    groupId === sg.id_grupo 
+                      ? 'bg-indigo-50 text-indigo-700' 
+                      : 'text-slate-600 hover:bg-white hover:text-indigo-600'
+                  }`}
+                >
+                  <Hash size={14} className="opacity-50 flex-shrink-0" />
+                  <span className="truncate">{sg.nombre}</span>
+                </button>
+              </div>
+            ))}
+
+            {subgroups.filter(sg => !myGroupsIds.has(sg.id_grupo) && !sg.privado).length > 0 && (
+              <div className="pt-2">
+                  <div className="px-3 pb-1 flex items-center gap-2">
+                      <div className="w-2 h-[2px] bg-slate-200"></div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Otras</p>
+                  </div>
+                  {subgroups.filter(sg => !myGroupsIds.has(sg.id_grupo) && !sg.privado).map(sg => (
+                      <div key={sg.id_grupo} className="relative flex items-center group/disc px-1">
+                          <div className="absolute -left-[10px] top-1/2 -translate-y-1/2 w-2.5 h-[2px] bg-slate-200"></div>
+                          <button
+                              disabled
+                              className="flex-1 text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-400 flex items-center gap-2"
+                          >
+                              <Hash size={14} className="opacity-30" />
+                              <span className="truncate">{sg.nombre}</span>
+                          </button>
+                      </div>
+                  ))}
+              </div>
+            )}
           </div>
-
-          {subgroups.filter(sg => myGroupsIds.has(sg.id_grupo)).map(sg => (
-            <button
-              key={sg.id_grupo}
-              onClick={() => navigate(`/chat/${sg.id_grupo}`)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                groupId === sg.id_grupo 
-                  ? 'bg-indigo-50 text-indigo-700' 
-                  : 'text-slate-600 hover:bg-white hover:text-indigo-600'
-              }`}
-            >
-              <Hash size={14} className="opacity-50 flex-shrink-0" />
-              <span className="truncate">{sg.nombre}</span>
-            </button>
-          ))}
-
-          {subgroups.filter(sg => !myGroupsIds.has(sg.id_grupo) && !sg.privado).length > 0 && (
-            <>
-                <div className="px-3 pt-6 pb-2">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Otras Discusiones</p>
-                </div>
-                {subgroups.filter(sg => !myGroupsIds.has(sg.id_grupo) && !sg.privado).map(sg => (
-                    <div key={sg.id_grupo} className="flex items-center gap-1 group/disc px-1">
-                        <button
-                            disabled
-                            className="flex-1 text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-400 flex items-center gap-2"
-                        >
-                            <Hash size={14} className="opacity-30" />
-                            <span className="truncate">{sg.nombre}</span>
-                        </button>
-                        <button 
-                            onClick={() => handleJoinDisc(sg.id_grupo)}
-                            className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded-md text-[10px] font-bold opacity-0 group-hover/disc:opacity-100 transition-all hover:bg-indigo-600 hover:text-white"
-                        >
-                            Unirse
-                        </button>
-                    </div>
-                ))}
-            </>
-          )}
           
           {subgroups.length === 0 && (
             <p className="text-[10px] text-slate-400 text-center mt-4 uppercase font-bold tracking-widest opacity-60">Sin otras discusiones</p>
           )}
-        </div>
-
-        <div className="p-4 border-t border-slate-200 bg-slate-100/50">
-          <button onClick={() => navigate('/')} className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors w-full">
-            <ArrowLeft size={14} /> Volver a Comunidades
-          </button>
         </div>
       </aside>
 
@@ -815,7 +910,7 @@ export const ChatPage: React.FC = () => {
           <div className="min-w-0">
             <h2 className="text-lg font-black text-slate-900 flex items-center gap-2 truncate">
               {currentGroup?.id_grupo_padre ? <Hash size={20} className="text-slate-400" /> : <Shield size={20} className="text-indigo-600" />}
-              {currentGroup?.id_grupo === parentGroup?.id_grupo ? 'General' : currentGroup?.nombre}
+              {currentGroup?.id_grupo === parentGroup?.id_grupo ? parentGroup?.nombre : currentGroup?.nombre}
             </h2>
             <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest truncate">
               {currentGroup?.id_grupo === parentGroup?.id_grupo ? 'Canal Principal' : `Discusión en ${parentGroup?.nombre}`}
@@ -914,6 +1009,80 @@ export const ChatPage: React.FC = () => {
           </form>
         </footer>
       </main>
+
+      {/* Notificaciones Toast */}
+      {notification && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-bottom-5 duration-300 flex items-center gap-3 border ${
+          notification.type === 'success' ? 'bg-emerald-600 border-emerald-500 text-white' : 
+          notification.type === 'error' ? 'bg-rose-600 border-rose-500 text-white' : 
+          'bg-indigo-600 border-indigo-500 text-white'
+        }`}>
+          <p className="text-sm font-bold">{notification.message}</p>
+        </div>
+      )}
+
+      {/* Modal de Confirmación */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100">
+              <h3 className="text-xl font-black text-slate-900">{confirmModal.title}</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-slate-600 font-medium">{confirmModal.message}</p>
+            </div>
+            <div className="p-6 bg-slate-50 flex gap-3">
+              <button 
+                onClick={() => setConfirmModal(null)} 
+                className="flex-1 py-3 text-sm font-bold text-slate-500 bg-white border border-slate-200 rounded-xl"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm} 
+                className="flex-1 py-3 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-lg shadow-rose-100"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Prompt */}
+      {promptModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100">
+              <h3 className="text-xl font-black text-slate-900">{promptModal.title}</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-600 font-medium">{promptModal.message}</p>
+              <input 
+                autoFocus
+                type="text"
+                value={promptModal.value}
+                onChange={(e) => setPromptModal({ ...promptModal, value: e.target.value })}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-sm font-bold"
+              />
+            </div>
+            <div className="p-6 bg-slate-50 flex gap-3">
+              <button 
+                onClick={() => setPromptModal(null)} 
+                className="flex-1 py-3 text-sm font-bold text-slate-500 bg-white border border-slate-200 rounded-xl"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => promptModal.onConfirm(promptModal.value)} 
+                className="flex-1 py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-100"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sidebar Derecha: Administración */}
       <aside 
@@ -1022,6 +1191,20 @@ export const ChatPage: React.FC = () => {
                       <div className="pt-4 flex flex-col items-center gap-2 text-slate-300 animate-pulse">
                         <p className="text-[8px] font-bold uppercase tracking-[0.2em]">Desliza para gestionar roles</p>
                         <Shield size={16} />
+                      </div>
+                    )}
+                    
+                    {canManageGroup && (
+                      <div className="pt-8 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={handleDeleteGroup}
+                          className="w-full py-3 px-4 rounded-xl text-xs font-black text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-2 group"
+                        >
+                          <Trash2 size={14} className="group-hover:animate-bounce" />
+                          ELIMINAR {currentGroup?.id_grupo_padre ? 'DISCUSIÓN' : 'GRUPO'}
+                        </button>
+                        <p className="text-[9px] text-slate-400 font-medium text-center mt-2 italic">Esta acción es irreversible</p>
                       </div>
                     )}
                   </div>

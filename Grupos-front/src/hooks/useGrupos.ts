@@ -30,6 +30,7 @@ export const useCreateGrupo = () => {
     mutationFn: (newGrupo: GrupoCreate) => grupoService.create(newGrupo),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grupos'] });
+      queryClient.invalidateQueries({ queryKey: ['my-grupos'] });
     },
   });
 };
@@ -41,6 +42,7 @@ export const useUpdateGrupo = () => {
       grupoService.update(id, grupo),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['grupos'] });
+      queryClient.invalidateQueries({ queryKey: ['my-grupos'] });
       queryClient.invalidateQueries({ queryKey: ['grupos', data.id_grupo] });
     },
   });
@@ -52,6 +54,7 @@ export const useDeleteGrupo = () => {
     mutationFn: (id: string) => grupoService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grupos'] });
+      queryClient.invalidateQueries({ queryKey: ['my-grupos'] });
     },
   });
 };
@@ -62,6 +65,7 @@ export const useJoinGrupo = () => {
     mutationFn: (id: string) => grupoService.join(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grupos'] });
+      queryClient.invalidateQueries({ queryKey: ['my-grupos'] });
     },
   });
 };
@@ -72,6 +76,7 @@ export const useLeaveGrupo = () => {
     mutationFn: (id: string) => grupoService.leave(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grupos'] });
+      queryClient.invalidateQueries({ queryKey: ['my-grupos'] });
     },
   });
 };

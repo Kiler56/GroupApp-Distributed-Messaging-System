@@ -2,7 +2,8 @@ from app.database import messages_collection
 from datetime import datetime
 from bson import ObjectId
 from app.rabbitmq import publish_event
-from app.config import GRUPOS_SERVICE_URL
+import requests
+
 
 def create_message(data, user):
     user_id = user.get("user_id")
@@ -82,8 +83,9 @@ def mark_message_as_read(message_id: str, user_id: str):
 
 def user_in_group(user_id: str, group_id: str, token: str):
     try:
+        # Apuntar al puerto 8002 (Servicio de Grupos)
         response = requests.get(
-            f"{GRUPOS_SERVICE_URL}/users-groups/{group_id}/usuarios",
+            f"http://127.0.0.1:8002/users-groups/{group_id}/usuarios",
             headers={"Authorization": f"Bearer {token}"}
         )
 

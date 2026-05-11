@@ -95,7 +95,8 @@ export const grupoService = {
   },
 
   addUserToGroup: async (id_grupo: string, id_usuario: number, id_rol_grupo: string): Promise<void> => {
-    await axios.post(`${import.meta.env.VITE_API_URL}/users-groups/${id_grupo}/usuarios`, {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+    await axios.post(`${baseUrl}/users-groups/${id_grupo}/usuarios`, {
         id_usuario: String(id_usuario),
         id_rol_grupo: id_rol_grupo,
         id_estado: 'ACTIVO'
@@ -106,6 +107,16 @@ export const grupoService = {
 
   inviteByEmail: async (id_grupo: string, email: string): Promise<any> => {
     const { data } = await api.post(`/${id_grupo}/invite`, { email });
+    return data;
+  },
+
+  join: async (id_grupo: string): Promise<any> => {
+    const { data } = await api.post(`/users-groups/${id_grupo}/join`);
+    return data;
+  },
+
+  leave: async (id_grupo: string): Promise<any> => {
+    const { data } = await api.delete(`/users-groups/${id_grupo}/leave`);
     return data;
   }
 };

@@ -180,10 +180,10 @@ class UsuariosGrupoService:
         # 1. Validar grupo
         grupo = self.grupo_service.get_grupo(db, id_grupo)
 
-        if grupo.privado:
+        if grupo.requiere_invitacion:
             raise HTTPException(
                 status_code=403,
-                detail="No puedes unirte directamente a un grupo privado"
+                detail="Este grupo requiere invitación o aprobación del administrador"
             )
 
         # 2. Evitar duplicados
@@ -218,23 +218,22 @@ class UsuariosGrupoService:
         return usuario_grupo
 
     def leave_grupo(
-    self,
-    db: Session,
-    id_grupo: str,
-    user_id: int
-):
-    # 1. Validar grupo
+        self,
+        db: Session,
+        id_grupo: str,
+        user_id: int
+    ):
+        # 1. Validar grupo
         self.grupo_service.get_grupo(db, id_grupo)
 
-    # 2. Buscar relación
+        # 2. Buscar relación
         user_rel = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
 
         if not user_rel:
-           raise HTTPException(404, "No perteneces al grupo")
+            raise HTTPException(404, "No perteneces al grupo")
 
-    # 3. Eliminar
+        # 3. Eliminar
         self.usuarios_repo.delete(db, user_rel)
-
         db.commit()
 
         return {"message": "Saliste del grupo"}

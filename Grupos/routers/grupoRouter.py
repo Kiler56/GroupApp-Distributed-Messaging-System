@@ -16,8 +16,11 @@ service = GrupoService()
 
 # Get all grupos
 @router.get("/groups", response_model=List[GrupoResponse])
-def get_grupos(db: Session = Depends(get_db)):
-    return service.get_grupos(db)
+def get_grupos(
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user)
+):
+    return service.get_grupos(db, user_id)
 
 # Get subgroups
 @router.get("/groups/{id_grupo}/subgroups", response_model=List[GrupoResponse])

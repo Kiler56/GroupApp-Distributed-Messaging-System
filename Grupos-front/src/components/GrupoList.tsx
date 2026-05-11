@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGrupos, useMyGrupos, useDeleteGrupo, useJoinGrupo, useLeaveGrupo } from '../hooks/useGrupos';
 import { useGrupoStore } from '../hooks/useGrupoStore';
 import { useNavigate } from 'react-router-dom';
+import { authService, User } from '../services/authService';
 
 export const GrupoList: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +12,17 @@ export const GrupoList: React.FC = () => {
   const { mutate: joinGrupo } = useJoinGrupo();
   const { mutate: leaveGrupo } = useLeaveGrupo();
   const { setSelectedGrupo, setModalOpen } = useGrupoStore();
+  
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      authService.getProfile(token).then(setUser).catch(console.error);
+    }
+  }, []);
+
+  const [confirmModal, setConfirmModal] = useState<{ title: string, message: string, onConfirm: () => void } | null>(null);
 
   if (loadingTodos || loadingMis) return <div className="p-8 text-center text-gray-500 font-bold">Cargando grupos...</div>;
 
@@ -51,6 +63,7 @@ export const GrupoList: React.FC = () => {
         ) : (
           todosLosGrupos?.map((grupo) => {
             const esMiembro = misGruposIds.has(grupo.id_grupo);
+            const esAdmin = user?.user_id === grupo.id_usuario_crea;
             
             return (
               <div 
@@ -66,28 +79,41 @@ export const GrupoList: React.FC = () => {
                     {grupo.privado ? 'Privado' : 'Público'}
                   </div>
                   
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setSelectedGrupo(grupo); setModalOpen(true); }}
-                      className="w-9 h-9 flex items-center justify-center bg-white text-slate-400 hover:text-indigo-600 rounded-xl shadow-sm border border-slate-100 transition-colors"
-                      title="Configurar"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); if (confirm('¿Eliminar grupo?')) deleteGrupo(grupo.id_grupo); }}
-                      className="w-9 h-9 flex items-center justify-center bg-white text-slate-400 hover:text-rose-600 rounded-xl shadow-sm border border-slate-100 transition-colors"
-                      title="Eliminar"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
+                  {esAdmin && (
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedGrupo(grupo); setModalOpen(true); }}
+                        className="w-9 h-9 flex items-center justify-center bg-white text-slate-400 hover:text-indigo-600 rounded-xl shadow-sm border border-slate-100 transition-colors"
+                        title="Configurar"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </button>
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setConfirmModal({
+                            title: "Eliminar Grupo",
+                            message: `¿Estás seguro de que deseas eliminar "${grupo.nombre}"? Esta acción es irreversible y eliminará todos los datos asociados.`,
+                            onConfirm: () => {
+                              deleteGrupo(grupo.id_grupo);
+                              setConfirmModal(null);
+                            }
+                          });
+                        }}
+                        className="w-9 h-9 flex items-center justify-center bg-white text-slate-400 hover:text-rose-600 rounded-xl shadow-sm border border-slate-100 transition-colors"
+                        title="Eliminar"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
+
                 
                 <div className="space-y-2">
                   <h3 className="text-2xl font-black text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">{grupo.nombre}</h3>
@@ -113,7 +139,9 @@ export const GrupoList: React.FC = () => {
                         Mensajes
                       </button>
                       <button 
-                        onClick={() => { if (confirm('¿Abandonar grupo?')) leaveGrupo(grupo.id_grupo); }}
+                        onClick={() => { leaveGrupo(grupo.id_grupo, {
+                          onSuccess: () => navigate('/')
+                        }); }}
                         className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                         title="Abandonar grupo"
                       >
@@ -123,9 +151,11 @@ export const GrupoList: React.FC = () => {
                       </button>
                     </div>
                   ) : (
-                    !grupo.privado && (
+                    !grupo.requiere_invitacion && (
                       <button 
-                        onClick={() => joinGrupo(grupo.id_grupo)}
+                        onClick={() => joinGrupo(grupo.id_grupo, {
+                          onSuccess: () => navigate(`/chat/${grupo.id_grupo}`)
+                        })}
                         className="bg-slate-900 text-white hover:bg-black px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all transform active:scale-95 shadow-lg shadow-slate-200"
                       >
                         Unirse
@@ -146,6 +176,34 @@ export const GrupoList: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* Modal de Confirmación */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100">
+              <h3 className="text-xl font-black text-slate-900">{confirmModal.title}</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-slate-600 font-medium">{confirmModal.message}</p>
+            </div>
+            <div className="p-6 bg-slate-50 flex gap-3">
+              <button 
+                onClick={() => setConfirmModal(null)} 
+                className="flex-1 py-3 text-sm font-bold text-slate-500 bg-white border border-slate-200 rounded-xl"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm} 
+                className="flex-1 py-3 text-sm font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-lg shadow-rose-100"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

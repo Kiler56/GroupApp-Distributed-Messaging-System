@@ -21,8 +21,14 @@ class GrupoService:
         self.usuarios_repo = UsuariosGrupoRepository()
 
     # Get all grupos
-    def get_grupos(self, db: Session):
-        return self.grupo_repo.get_all(db)
+    def get_grupos(self, db: Session, user_id: int):
+        all_groups = self.grupo_repo.get_all(db)
+        
+        # Filtrar: solo públicos o donde sea miembro
+        relaciones = self.usuarios_repo.get_by_usuario(db, str(user_id))
+        member_group_ids = {rel.id_grupo for rel in relaciones}
+        
+        return [g for g in all_groups if not g.privado or g.id_grupo in member_group_ids]
 
     # Get subgroups
     def get_subgroups(self, db: Session, id_padre: str):

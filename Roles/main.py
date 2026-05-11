@@ -8,8 +8,6 @@ from Roles.repositories.rolRecursoRepository import RolRecursoRepository
 from Roles.models.recursoGrupoModel import RecursoGrupo
 from Roles.database import SessionLocal, engine, Base
 
-from Roles.config import GRPC_PORT
-
 # Create tables
 Base.metadata.create_all(bind=engine)
 
@@ -213,7 +211,7 @@ class RoleService(roles_pb2_grpc.RoleServiceServicer):
         )
 
 def serve():
-    port = GRPC_PORT
+    port = os.getenv("ROLES_GRPC_PORT", "50051")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     roles_pb2_grpc.add_RoleServiceServicer_to_server(RoleService(), server)
     server.add_insecure_port(f'[::]:{port}')

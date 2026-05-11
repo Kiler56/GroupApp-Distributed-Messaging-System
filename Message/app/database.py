@@ -1,8 +1,11 @@
 from pymongo import MongoClient
-from app.config import MONGO_URI, DB_NAME
+import os
+from dotenv import load_dotenv
 
-client = MongoClient(MONGO_URI)
-db = client[DB_NAME]
+load_dotenv()
+
+client = MongoClient(os.getenv("MONGO_URI"))
+db = client[os.getenv("DB_NAME")]
 
 messages_collection = db["messages"]
 chats_collection = db["chats"]

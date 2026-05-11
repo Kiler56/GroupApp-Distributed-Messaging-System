@@ -3,10 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from Grupos.database import engine, Base, SessionLocal
 from Grupos.routers import grupoRouter, usuariosGrupoRouter
-from Grupos.config import ALLOWED_ORIGINS
+from Grupos.models.tipoEstadoUsrGrpModel import TipoEstadoUsrGrp
 
 def seed_estados(db):
-
     estados = [
         TipoEstadoUsrGrp(id_estado="ACTIVO", nombre="Activo"),
         TipoEstadoUsrGrp(id_estado="INACTIVO", nombre="Inactivo"),
@@ -30,7 +29,7 @@ app = FastAPI(title="Servicio de Grupos", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

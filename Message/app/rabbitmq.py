@@ -9,7 +9,7 @@ def publish_event(queue, message):
 
         channel = connection.channel()
 
-        channel.queue_declare(queue=queue)
+        channel.queue_declare(queue=queue, durable=True)
 
         channel.basic_publish(
             exchange='',
@@ -34,7 +34,7 @@ def consume_messages():
 
     channel = connection.channel()
 
-    channel.queue_declare(queue="messages")
+    channel.queue_declare(queue="messages", durable=True)
 
     def callback(ch, method, properties, body):
         message = json.loads(body)
