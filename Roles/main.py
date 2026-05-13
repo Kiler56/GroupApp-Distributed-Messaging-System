@@ -39,84 +39,92 @@ class RoleService(roles_pb2_grpc.RoleServiceServicer):
 
     def GetRolesByGrupo(self, request, context):
         db = SessionLocal()
-        roles = self.rol_repo.get_by_grupo(db, request.id_grupo)
-        db.close()
-        return roles_pb2.GetRolesByGrupoResponse(
-            roles=[roles_pb2.RoleResponse(
-                id_rol_grupo=r.id_rol_grupo,
-                id_grupo=r.id_grupo,
-                nombre=r.nombre,
-                descripcion=r.descripcion or "",
-                activo=r.activo
-            ) for r in roles]
-        )
+        try:
+            roles = self.rol_repo.get_by_grupo(db, request.id_grupo)
+            return roles_pb2.GetRolesByGrupoResponse(
+                roles=[roles_pb2.RoleResponse(
+                    id_rol_grupo=r.id_rol_grupo,
+                    id_grupo=r.id_grupo,
+                    nombre=r.nombre,
+                    descripcion=r.descripcion or "",
+                    activo=r.activo
+                ) for r in roles]
+            )
+        finally:
+            db.close()
 
     def GetRoleById(self, request, context):
         db = SessionLocal()
-        role = self.rol_repo.get_by_id(db, request.id_rol_grupo)
-        db.close()
-        if not role:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details('Role not found')
-            return roles_pb2.RoleResponse()
-        return roles_pb2.RoleResponse(
-            id_rol_grupo=role.id_rol_grupo,
-            id_grupo=role.id_grupo,
-            nombre=role.nombre,
-            descripcion=role.descripcion or "",
-            activo=role.activo
-        )
+        try:
+            role = self.rol_repo.get_by_id(db, request.id_rol_grupo)
+            if not role:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details('Role not found')
+                return roles_pb2.RoleResponse()
+            return roles_pb2.RoleResponse(
+                id_rol_grupo=role.id_rol_grupo,
+                id_grupo=role.id_grupo,
+                nombre=role.nombre,
+                descripcion=role.descripcion or "",
+                activo=role.activo
+            )
+        finally:
+            db.close()
 
     def CreateRole(self, request, context):
         db = SessionLocal()
-        role_data = {
-            "id_grupo": request.id_grupo,
-            "nombre": request.nombre,
-            "descripcion": request.descripcion
-        }
-        role = self.rol_repo.create(db, role_data)
-        db.close()
-        return roles_pb2.RoleResponse(
-            id_rol_grupo=role.id_rol_grupo,
-            id_grupo=role.id_grupo,
-            nombre=role.nombre,
-            descripcion=role.descripcion or "",
-            activo=role.activo
-        )
+        try:
+            role_data = {
+                "id_grupo": request.id_grupo,
+                "nombre": request.nombre,
+                "descripcion": request.descripcion
+            }
+            role = self.rol_repo.create(db, role_data)
+            return roles_pb2.RoleResponse(
+                id_rol_grupo=role.id_rol_grupo,
+                id_grupo=role.id_grupo,
+                nombre=role.nombre,
+                descripcion=role.descripcion or "",
+                activo=role.activo
+            )
+        finally:
+            db.close()
 
     def UpdateRole(self, request, context):
         db = SessionLocal()
-        role = self.rol_repo.get_by_id(db, request.id_rol_grupo)
-        if not role:
+        try:
+            role = self.rol_repo.get_by_id(db, request.id_rol_grupo)
+            if not role:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                return roles_pb2.RoleResponse()
+            
+            self.rol_repo.update(db, role, {
+                "nombre": request.nombre,
+                "descripcion": request.descripcion
+            })
+            db.commit()
+            db.refresh(role)
+            return roles_pb2.RoleResponse(
+                id_rol_grupo=role.id_rol_grupo,
+                id_grupo=role.id_grupo,
+                nombre=role.nombre,
+                descripcion=role.descripcion or "",
+                activo=role.activo
+            )
+        finally:
             db.close()
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            return roles_pb2.RoleResponse()
-        
-        self.rol_repo.update(db, role, {
-            "nombre": request.nombre,
-            "descripcion": request.descripcion
-        })
-        db.commit()
-        db.refresh(role)
-        db.close()
-        return roles_pb2.RoleResponse(
-            id_rol_grupo=role.id_rol_grupo,
-            id_grupo=role.id_grupo,
-            nombre=role.nombre,
-            descripcion=role.descripcion or "",
-            activo=role.activo
-        )
 
     def DeleteRole(self, request, context):
         db = SessionLocal()
-        role = self.rol_repo.get_by_id(db, request.id_rol_grupo)
-        if role:
-            self.rol_repo.delete(db, role)
-            db.commit()
+        try:
+            role = self.rol_repo.get_by_id(db, request.id_rol_grupo)
+            if role:
+                self.rol_repo.delete(db, role)
+                db.commit()
+                return roles_pb2.DeleteRoleResponse(success=True)
+            return roles_pb2.DeleteRoleResponse(success=False)
+        finally:
             db.close()
-            return roles_pb2.DeleteRoleResponse(success=True)
-        db.close()
-        return roles_pb2.DeleteRoleResponse(success=False)
 
     def AssignResourceToRole(self, request, context):
         db = SessionLocal()
@@ -167,17 +175,18 @@ class RoleService(roles_pb2_grpc.RoleServiceServicer):
 
     def RemoveResourceFromRole(self, request, context):
         db = SessionLocal()
-        rr = db.query(self.rol_recurso_repo.model).filter_by(
-            id_rol_grupo=request.id_rol_grupo,
-            id_recurso=request.id_recurso
-        ).first()
-        if rr:
-            db.delete(rr)
-            db.commit()
+        try:
+            rr = db.query(self.rol_recurso_repo.model).filter_by(
+                id_rol_grupo=request.id_rol_grupo,
+                id_recurso=request.id_recurso
+            ).first()
+            if rr:
+                db.delete(rr)
+                db.commit()
+                return roles_pb2.DeleteRoleResponse(success=True)
+            return roles_pb2.DeleteRoleResponse(success=False)
+        finally:
             db.close()
-            return roles_pb2.DeleteRoleResponse(success=True)
-        db.close()
-        return roles_pb2.DeleteRoleResponse(success=False)
 
     def GetResourcesByRole(self, request, context):
         db = SessionLocal()

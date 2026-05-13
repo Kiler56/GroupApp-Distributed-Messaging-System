@@ -15,82 +15,95 @@ router = APIRouter()
 @router.post("/register")
 def register(user: UserCreate):
     db = SessionLocal()
+    try:
+        existing_user = db.query(User).filter(User.email == user.email).first()
 
-    existing_user = db.query(User).filter(User.email == user.email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+        new_user = User(
+            username=user.username,
+            email=user.email,
+            password=hash_password(user.password)
+        )
 
-    new_user = User(
-        username=user.username,
-        email=user.email,
-        password=hash_password(user.password)
-    )
+        db.add(new_user)
+        db.commit()
 
-    db.add(new_user)
-    db.commit()
-
-    return {"message": "User created"}
+        return {"message": "User created"}
+    finally:
+        db.close()
 
 
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     db = SessionLocal()
+    try:
+        existing_user = db.query(User).filter(User.email == form_data.username).first()
 
-    existing_user = db.query(User).filter(User.email == form_data.username).first()
+        if not existing_user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    if not existing_user:
-        raise HTTPException(status_code=404, detail="User not found")
+        if not verify_password(form_data.password, existing_user.password):
+            raise HTTPException(status_code=400, detail="Incorrect password")
 
-    if not verify_password(form_data.password, existing_user.password):
-        raise HTTPException(status_code=400, detail="Incorrect password")
+        access_token = create_access_token(
+            data={
+                "user_id": existing_user.id_usuario, 
+                "sub": existing_user.email
+            }
+        )
 
-    access_token = create_access_token(
-        data={
-            "user_id": existing_user.id_usuario, 
-            "sub": existing_user.email
+        return {
+            "access_token": access_token,
+            "token_type": "bearer"
         }
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    finally:
+        db.close()
 
 
 @router.get("/profile")
 def profile(user_id: int = Depends(get_current_user)):
     db = SessionLocal()
-    user = db.query(User).filter(User.id_usuario == user_id).first()
-    db.close()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {
-        "user_id": user.id_usuario,
-        "username": user.username,
-        "email": user.email
-    }
+    try:
+        user = db.query(User).filter(User.id_usuario == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {
+            "user_id": user.id_usuario,
+            "username": user.username,
+            "email": user.email
+        }
+    finally:
+        db.close()
 
 @router.get("/verify/{user_id}")
 def verify_user(user_id: int):
     db = SessionLocal()
-    user = db.query(User).filter(User.id_usuario == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"id": user.id_usuario, "username": user.username}
+    try:
+        user = db.query(User).filter(User.id_usuario == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"id": user.id_usuario, "username": user.username}
+    finally:
+        db.close()
 
 @router.get("/users")
 def get_all_users(user_id: int = Depends(get_current_user)):
     db = SessionLocal()
-    users = db.query(User).all()
-    db.close()
-    return [{"id_usuario": u.id_usuario, "username": u.username, "email": u.email} for u in users]
+    try:
+        users = db.query(User).all()
+        return [{"id_usuario": u.id_usuario, "username": u.username, "email": u.email} for u in users]
+    finally:
+        db.close()
 
 @router.get("/user-by-email/{email}")
 def get_user_by_email(email: str):
     db = SessionLocal()
-    user = db.query(User).filter(User.email == email).first()
-    db.close()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"id_usuario": user.id_usuario, "username": user.username, "email": user.email}
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"id_usuario": user.id_usuario, "username": user.username, "email": user.email}
+    finally:
+        db.close()

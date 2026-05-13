@@ -29,17 +29,19 @@ async def lifespan(app: FastAPI):
 class AuthGRPCService(auth_pb2_grpc.AuthServiceServicer):
     def GetUserByEmail(self, request, context):
         db = SessionLocal()
-        user = db.query(User).filter(User.email == request.email).first()
-        db.close()
-        if not user:
-            context.set_code(grpc.StatusCode.NOT_FOUND)
-            context.set_details('User not found')
-            return auth_pb2.UserResponse()
-        return auth_pb2.UserResponse(
-            id_usuario=user.id_usuario,
-            username=user.username,
-            email=user.email
-        )
+        try:
+            user = db.query(User).filter(User.email == request.email).first()
+            if not user:
+                context.set_code(grpc.StatusCode.NOT_FOUND)
+                context.set_details('User not found')
+                return auth_pb2.UserResponse()
+            return auth_pb2.UserResponse(
+                id_usuario=user.id_usuario,
+                username=user.username,
+                email=user.email
+            )
+        finally:
+            db.close()
 
     def VerifyToken(self, request, context):
         from jose import jwt, JWTError
@@ -53,19 +55,21 @@ class AuthGRPCService(auth_pb2_grpc.AuthServiceServicer):
                 return auth_pb2.VerifyTokenResponse()
             
             db = SessionLocal()
-            user = db.query(User).filter(User.id_usuario == user_id).first()
-            db.close()
-            
-            if not user:
-                context.set_code(grpc.StatusCode.NOT_FOUND)
-                context.set_details('User not found')
-                return auth_pb2.VerifyTokenResponse()
+            try:
+                user = db.query(User).filter(User.id_usuario == user_id).first()
                 
-            return auth_pb2.VerifyTokenResponse(
-                user_id=user.id_usuario,
-                username=user.username,
-                email=user.email
-            )
+                if not user:
+                    context.set_code(grpc.StatusCode.NOT_FOUND)
+                    context.set_details('User not found')
+                    return auth_pb2.VerifyTokenResponse()
+                    
+                return auth_pb2.VerifyTokenResponse(
+                    user_id=user.id_usuario,
+                    username=user.username,
+                    email=user.email
+                )
+            finally:
+                db.close()
         except JWTError:
             context.set_code(grpc.StatusCode.UNAUTHENTICATED)
             context.set_details('Token expired or invalid')

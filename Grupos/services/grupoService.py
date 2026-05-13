@@ -150,31 +150,33 @@ class GrupoService:
     def get_group_roles(self, id_grupo: str):
         from Grupos.config.database import SessionLocal
         db = SessionLocal()
-        grupo = self.grupo_repo.get_by_id(db, id_grupo)
-        db.close()
-        
-        if not grupo:
-            return []
+        try:
+            grupo = self.grupo_repo.get_by_id(db, id_grupo)
+            
+            if not grupo:
+                return []
 
-        roles = self.roles_client.get_roles_by_grupo(id_grupo)
-        
-        if grupo.id_grupo_padre:
-            parent_roles = self.roles_client.get_roles_by_grupo(grupo.id_grupo_padre)
-            existing_names = {r.nombre for r in roles}
-            for pr in parent_roles:
-                if pr.nombre not in existing_names:
-                    roles.append(pr)
+            roles = self.roles_client.get_roles_by_grupo(id_grupo)
+            
+            if grupo.id_grupo_padre:
+                parent_roles = self.roles_client.get_roles_by_grupo(grupo.id_grupo_padre)
+                existing_names = {r.nombre for r in roles}
+                for pr in parent_roles:
+                    if pr.nombre not in existing_names:
+                        roles.append(pr)
 
-        result = []
-        for r in roles:
-            permissions = self.roles_client.get_resources_by_role(r.id_rol_grupo)
-            result.append({
-                "id_rol_grupo": r.id_rol_grupo,
-                "nombre": r.nombre,
-                "descripcion": r.descripcion,
-                "permisos": [p.id_recurso for p in permissions]
-            })
-        return result
+            result = []
+            for r in roles:
+                permissions = self.roles_client.get_resources_by_role(r.id_rol_grupo)
+                result.append({
+                    "id_rol_grupo": r.id_rol_grupo,
+                    "nombre": r.nombre,
+                    "descripcion": r.descripcion,
+                    "permisos": [p.id_recurso for p in permissions]
+                })
+            return result
+        finally:
+            db.close()
 
     def get_subgroups(self, db: Session, id_padre: str, user_id: int = None):
         all_subgroups = self.grupo_repo.get_subgroups(db, id_padre)
