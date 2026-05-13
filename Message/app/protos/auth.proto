@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc GetUserByEmail(GetUserByEmailRequest) returns (UserResponse);
+  rpc VerifyToken(VerifyTokenRequest) returns (VerifyTokenResponse);
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
+message UserResponse {
+  int32 id_usuario = 1;
+  string username = 2;
+  string email = 3;
+}
+
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+message VerifyTokenResponse {
+  int32 user_id = 1;
+  string username = 2;
+  string email = 3;
+}

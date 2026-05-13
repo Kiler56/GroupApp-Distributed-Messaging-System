@@ -2,12 +2,14 @@ import os
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from Message.app.protos import auth_pb2 as auth_pb2
+from Message.app.protos import auth_pb2_grpc as auth_pb2_grpc
 import grpc
 import sys
 
 load_dotenv()
 
-
+security = HTTPBearer()
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
