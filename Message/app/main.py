@@ -66,7 +66,9 @@ def rabbit_callback(ch, method, properties, body):
 
 def start_rabbit_consumer():
     import pika
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='127.0.0.1'))
+    import os
+    rabbitmq_host = os.getenv("RABBITMQ_URL", "127.0.0.1")
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host))
     channel = connection.channel()
     channel.queue_declare(queue="messages", durable=True)
     channel.basic_consume(queue="messages", on_message_callback=rabbit_callback)
