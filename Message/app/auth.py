@@ -2,8 +2,8 @@ import os
 from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from Message.app.protos import auth_pb2 as auth_pb2
-from Message.app.protos import auth_pb2_grpc as auth_pb2_grpc
+from app.protos import auth_pb2 as auth_pb2
+from app.protos import auth_pb2_grpc as auth_pb2_grpc
 import grpc
 import sys
 
