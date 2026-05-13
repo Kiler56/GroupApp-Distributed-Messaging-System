@@ -97,4 +97,5 @@ def user_in_group(user_id: str, group_id: str, token: str):
         return any(str(u.get("id_usuario")) == str(user_id) for u in users)
 
     except Exception as e:
+        print(f"Error in user_in_group: {e}")
         return False
