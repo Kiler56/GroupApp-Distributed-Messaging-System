@@ -18,7 +18,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nauth.proto\x12\x04\x61uth\"&\n\x15GetUserByEmailRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\"C\n\x0cUserResponse\x12\x12\n\nid_usuario\x18\x01 \x01(\x05\x12\x10\n\x08username\x18\x02 \x01(\t\x12\r\n\x05\x65mail\x18\x03 \x01(\t2P\n\x0b\x41uthService\x12\x41\n\x0eGetUserByEmail\x12\x1b.auth.GetUserByEmailRequest\x1a\x12.auth.UserResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nauth.proto\x12\x04\x61uth\"&\n\x15GetUserByEmailRequest\x12\r\n\x05\x65mail\x18\x01 \x01(\t\"C\n\x0cUserResponse\x12\x12\n\nid_usuario\x18\x01 \x01(\x05\x12\x10\n\x08username\x18\x02 \x01(\t\x12\r\n\x05\x65mail\x18\x03 \x01(\t\"#\n\x12VerifyTokenRequest\x12\r\n\x05token\x18\x01 \x01(\t\"G\n\x13VerifyTokenResponse\x12\x0f\n\x07user_id\x18\x01 \x01(\x05\x12\x10\n\x08username\x18\x02 \x01(\t\x12\r\n\x05\x65mail\x18\x03 \x01(\t2\x94\x01\n\x0b\x41uthService\x12\x41\n\x0eGetUserByEmail\x12\x1b.auth.GetUserByEmailRequest\x1a\x12.auth.UserResponse\x12\x42\n\x0bVerifyToken\x12\x18.auth.VerifyTokenRequest\x1a\x19.auth.VerifyTokenResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -29,6 +29,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_GETUSERBYEMAILREQUEST']._serialized_end=58
   _globals['_USERRESPONSE']._serialized_start=60
   _globals['_USERRESPONSE']._serialized_end=127
-  _globals['_AUTHSERVICE']._serialized_start=129
-  _globals['_AUTHSERVICE']._serialized_end=209
+  _globals['_VERIFYTOKENREQUEST']._serialized_start=129
+  _globals['_VERIFYTOKENREQUEST']._serialized_end=164
+  _globals['_VERIFYTOKENRESPONSE']._serialized_start=166
+  _globals['_VERIFYTOKENRESPONSE']._serialized_end=237
+  _globals['_AUTHSERVICE']._serialized_start=240
+  _globals['_AUTHSERVICE']._serialized_end=388
 

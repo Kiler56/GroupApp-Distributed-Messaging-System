@@ -3,8 +3,8 @@ from fastapi import HTTPException
 
 from Grupos.repositories.usuariosGrupoRepository import UsuariosGrupoRepository
 from Grupos.repositories.grupoRepository import GrupoRepository
-from Grupos.roles_client import RolesClient
-from Grupos.auth_client import AuthClient
+from Grupos.clients.roles_client import RolesClient
+from Grupos.clients.auth_client import AuthClient
 
 from Grupos.schemas.grupoSchema import (
     GrupoCreate,
@@ -148,7 +148,7 @@ class GrupoService:
         return True
 
     def get_group_roles(self, id_grupo: str):
-        from Grupos.database import SessionLocal
+        from Grupos.config.database import SessionLocal
         db = SessionLocal()
         grupo = self.grupo_repo.get_by_id(db, id_grupo)
         db.close()
@@ -197,7 +197,7 @@ class GrupoService:
         return [g for g in all_subgroups if not g.privado or g.id_grupo in member_group_ids]
 
     def create_role(self, id_grupo: str, data: dict, user_id: int):
-        from Grupos.database import SessionLocal
+        from Grupos.config.database import SessionLocal
         db = SessionLocal()
         try:
             self.validate_admin(db, id_grupo, user_id)
@@ -213,7 +213,7 @@ class GrupoService:
             db.close()
 
     def update_role(self, id_grupo: str, id_rol_grupo: str, data: dict, user_id: int):
-        from Grupos.database import SessionLocal
+        from Grupos.config.database import SessionLocal
         db = SessionLocal()
         try:
             self.validate_admin(db, id_grupo, user_id)
@@ -229,7 +229,7 @@ class GrupoService:
             db.close()
 
     def delete_role(self, id_grupo: str, id_rol_grupo: str, user_id: int):
-        from Grupos.database import SessionLocal
+        from Grupos.config.database import SessionLocal
         db = SessionLocal()
         try:
             self.validate_admin(db, id_grupo, user_id)
@@ -242,7 +242,7 @@ class GrupoService:
         return [{"id_recurso": r.id_recurso, "nombre_recurso": r.nombre_recurso, "codigo_interno": r.codigo_interno} for r in resources]
 
     def invite_by_email(self, id_grupo: str, email: str, user_id: int):
-        from Grupos.database import SessionLocal
+        from Grupos.config.database import SessionLocal
         db = SessionLocal()
         try:
             self.validate_admin(db, id_grupo, user_id)
@@ -273,7 +273,7 @@ class GrupoService:
             db.close()
 
     def assign_permission(self, id_grupo: str, id_rol_grupo: str, id_recurso: str, user_id: int):
-        from Grupos.database import SessionLocal
+        from Grupos.config.database import SessionLocal
         db = SessionLocal()
         try:
             self.validate_admin(db, id_grupo, user_id)
@@ -287,7 +287,7 @@ class GrupoService:
             db.close()
 
     def remove_permission(self, id_grupo: str, id_rol_grupo: str, id_recurso: str, user_id: int):
-        from Grupos.database import SessionLocal
+        from Grupos.config.database import SessionLocal
         db = SessionLocal()
         try:
             self.validate_admin(db, id_grupo, user_id)

@@ -1,7 +1,7 @@
 import os
 import grpc
-import Roles.protos.roles_pb2 as roles_pb2
-import Roles.protos.roles_pb2_grpc as roles_pb2_grpc
+from Grupos.protos import roles_pb2 as roles_pb2
+from Grupos.protos import roles_pb2_grpc as roles_pb2_grpc
 
 class RolesClient:
     def __init__(self):

@@ -2,16 +2,8 @@ from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 import grpc
 import os
-import sys
-
-# Path hack for local grpc imports
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-if CURRENT_DIR not in sys.path:
-    sys.path.insert(0, CURRENT_DIR)
-
-import auth_pb2 as auth_pb2
-import auth_pb2_grpc as auth_pb2_grpc
-
+from Grupos.protos import auth_pb2 as auth_pb2
+from Grupos.protos import auth_pb2_grpc as auth_pb2_grpc
 from dotenv import load_dotenv
 
 load_dotenv()

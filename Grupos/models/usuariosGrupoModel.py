@@ -1,7 +1,7 @@
 from sqlalchemy import Column, DateTime, Index, String, ForeignKey, Boolean, UniqueConstraint
 from uuid6 import uuid7
 from datetime import datetime
-from Grupos.database import Base
+from Grupos.config.database import Base
 
 class UsuariosGrupo(Base):
     __tablename__ = "usuarios_grupo"

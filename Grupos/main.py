@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from Grupos.database import engine, Base, SessionLocal
+from Grupos.config.database import engine, Base, SessionLocal
 from Grupos.routers import grupoRouter, usuariosGrupoRouter
 from Grupos.models.tipoEstadoUsrGrpModel import TipoEstadoUsrGrp
 from dotenv import load_dotenv

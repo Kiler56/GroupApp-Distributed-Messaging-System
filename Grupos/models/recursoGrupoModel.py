@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String
-from Grupos.database import Base
+from Grupos.config.database import Base
 
 class RecursoGrupo(Base):
     __tablename__ = "recurso_grupo"

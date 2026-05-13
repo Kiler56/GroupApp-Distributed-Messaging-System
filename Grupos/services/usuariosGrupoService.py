@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from Grupos.repositories.usuariosGrupoRepository import UsuariosGrupoRepository
-from Grupos.roles_client import RolesClient
+from Grupos.clients.roles_client import RolesClient
 from Grupos.schemas.usuariosGrupoSchema import UsuariosGrupoCreate
 from Grupos.services.grupoService import GrupoService
 
