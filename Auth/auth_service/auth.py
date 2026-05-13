@@ -12,9 +12,6 @@ from auth_service.dependencies import get_current_user
 router = APIRouter()
 
 
-# ========================
-# REGISTER
-# ========================
 @router.post("/register")
 def register(user: UserCreate):
     db = SessionLocal()
@@ -36,9 +33,6 @@ def register(user: UserCreate):
     return {"message": "User created"}
 
 
-# ========================
-# LOGIN
-# ========================
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends()):
     db = SessionLocal()
@@ -64,9 +58,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
     }
 
 
-# ========================
-# PROFILE (protegido con JWT)
-# ========================
 @router.get("/profile")
 def profile(user_id: int = Depends(get_current_user)):
     db = SessionLocal()

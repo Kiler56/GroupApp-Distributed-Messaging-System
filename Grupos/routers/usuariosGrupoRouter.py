@@ -17,7 +17,6 @@ router = APIRouter(tags=["Grupos"])
 service = UsuariosGrupoService()
 
 
-# Agregar usuario al grupo
 @router.post("/users-groups/{id_grupo}/usuarios", response_model=UsuariosGrupoResponse, status_code=status.HTTP_201_CREATED)
 def add_usuario_a_grupo(
     id_grupo: str,
@@ -28,7 +27,6 @@ def add_usuario_a_grupo(
     return service.add_usuario_a_grupo(db, id_grupo, data, user_id)
 
 
-# Obtener usuarios de un grupo
 @router.get("/users-groups/{id_grupo}/usuarios", response_model=List[UsuariosGrupoResponse])
 def get_usuarios_grupo(
     id_grupo: str,
@@ -37,7 +35,6 @@ def get_usuarios_grupo(
     return service.get_usuarios_grupo(db, id_grupo)
 
 
-# Eliminar usuario del grupo
 @router.delete("/users-groups/{id_grupo}/usuarios/{id_usuario}")
 def remove_usuario(
     id_grupo: str,
@@ -52,7 +49,6 @@ def remove_usuario(
         user_id
     )
 
-# Actualizar rol de usuario
 @router.put("/users-groups/{id_grupo}/usuarios/{id_usuario}")
 def update_usuario_rol(
     id_grupo: str,
@@ -64,7 +60,6 @@ def update_usuario_rol(
     return service.update_usuario_grupo(db, id_grupo, id_usuario, data, user_id)
 
 
-# Unirse a un grupo (SELF)
 @router.post("/users-groups/{id_grupo}/join", status_code=status.HTTP_201_CREATED)
 def join_grupo(
     id_grupo: str,
@@ -74,7 +69,6 @@ def join_grupo(
     return service.join_grupo(db, id_grupo, user_id)
 
 
-# Salir del grupo (SELF)
 @router.delete("/users-groups/{id_grupo}/leave")
 def leave_grupo(
     id_grupo: str,

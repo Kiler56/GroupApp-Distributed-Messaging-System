@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
@@ -21,10 +20,8 @@ class UsuariosGrupoService:
         data: UsuariosGrupoCreate,
         user_id: int
     ):
-        # 1. Validar grupo
         grupo = self.grupo_service.get_grupo(db, id_grupo)
 
-        # 2. Validar pertenencia
         user_rel = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
 
         if not user_rel:
@@ -33,12 +30,9 @@ class UsuariosGrupoService:
                 detail="No perteneces al grupo"
             )
 
-        # 3. Validar admin
         rol = self.roles_client.get_role_by_id(user_rel.id_rol_grupo)
 
         if not rol:
-            # Si el rol no se encuentra (puede pasar si se borró en el MS Roles)
-            # asumimos que no es admin por seguridad
             raise HTTPException(
                 status_code=403,
                 detail="No tienes un rol válido asignado"
@@ -50,7 +44,6 @@ class UsuariosGrupoService:
                 detail="No eres administrador"
             )
 
-        # 4. Evitar duplicados
         existing = self.usuarios_repo.get_one(
             db,
             id_grupo,
@@ -63,7 +56,6 @@ class UsuariosGrupoService:
                 detail="El usuario ya pertenece al grupo"
             )
 
-        # 5. Validar rol
         rol_asignar = self.roles_client.get_role_by_id(data.id_rol_grupo)
 
         if not rol_asignar:
@@ -72,7 +64,6 @@ class UsuariosGrupoService:
                 detail="Rol no encontrado"
             )
 
-        # 6. Crear relación
         usuario_grupo = self.usuarios_repo.create(db, {
             "id_grupo": id_grupo,
             "id_usuario": data.id_usuario,
@@ -92,32 +83,26 @@ class UsuariosGrupoService:
         target_user_id: int,
         user_id: int
     ):
-        # 1. Validar grupo
         self.grupo_service.get_grupo(db, id_grupo)
 
-        # 2. Validar que quien ejecuta pertenece
         user_rel = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
 
         if not user_rel:
            raise HTTPException(403, "No perteneces al grupo")
 
-        # 3. Validar que es admin
         rol = self.roles_client.get_role_by_id(user_rel.id_rol_grupo)
 
         if not rol or rol.nombre != "Administrador":
           raise HTTPException(403, "No eres administrador")
 
-        # 4. Buscar usuario a eliminar
         target_rel = self.usuarios_repo.get_by_user_and_group(db, str(target_user_id), id_grupo)
 
         if not target_rel:
           raise HTTPException(404, "Usuario no pertenece al grupo")
 
-        # 5. evitar que se elimine a sí mismo como admin
         if str(target_user_id) == str(user_id):
           raise HTTPException(400, "Usa la opción de salir del grupo")
  
-        # 6. Eliminar
         self.usuarios_repo.delete(db, target_rel)
 
         db.commit()
@@ -132,35 +117,28 @@ class UsuariosGrupoService:
         data: UsuariosGrupoCreate, # Usamos este schema para id_rol_grupo
         user_id: int
     ):
-        # 1. Validar grupo
         self.grupo_service.get_grupo(db, id_grupo)
 
-        # 2. Validar que quien ejecuta pertenece
         user_rel = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
 
         if not user_rel:
            raise HTTPException(403, "No perteneces al grupo")
 
-        # 3. Validar que es admin
         rol = self.roles_client.get_role_by_id(user_rel.id_rol_grupo)
 
         if not rol or rol.nombre != "Administrador":
           raise HTTPException(403, "No eres administrador")
 
-        # 4. Buscar relación del usuario objetivo
         target_rel = self.usuarios_repo.get_by_user_and_group(db, str(target_user_id), id_grupo)
 
         if not target_rel:
           raise HTTPException(404, "Usuario no pertenece al grupo")
 
-        # REGLA SEGURIDAD: Solo uno mismo puede cambiarse su propio rol si es admin
-        # O mejor dicho: un admin no puede cambiar el rol de otro admin.
         if str(target_user_id) != str(user_id):
             target_rol = self.roles_client.get_role_by_id(target_rel.id_rol_grupo)
             if target_rol and target_rol.nombre == "Administrador":
                 raise HTTPException(403, "No puedes modificar el rol de otro Administrador")
 
-        # 5. Actualizar
         target_rel.id_rol_grupo = data.id_rol_grupo
         if data.id_estado:
             target_rel.id_estado = data.id_estado
@@ -177,7 +155,6 @@ class UsuariosGrupoService:
         id_grupo: str,
         user_id: int
     ):
-        # 1. Validar grupo
         grupo = self.grupo_service.get_grupo(db, id_grupo)
 
         if grupo.requiere_invitacion:
@@ -186,25 +163,21 @@ class UsuariosGrupoService:
                 detail="Este grupo requiere invitación o aprobación del administrador"
             )
 
-        # 2. Evitar duplicados
         existing = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
 
         if existing:
             return {"message": "Ya perteneces al grupo", "id_usuario_grupo": existing.id_usuario_grupo}
 
-        # 3. Buscar rol de "Miembro" para este grupo vía gRPC
         roles = self.roles_client.get_roles_by_grupo(id_grupo)
         rol_miembro = next((r for r in roles if r.nombre == "Miembro"), None)
 
         if not rol_miembro:
-            # Si no existe, crearlo
             rol_miembro = self.roles_client.create_role(
                 id_grupo=id_grupo,
                 nombre="Miembro",
                 descripcion="Miembro del grupo"
             )
 
-        # 4. Crear relación
         usuario_grupo = self.usuarios_repo.create(db, {
             "id_grupo": id_grupo,
             "id_usuario": str(user_id),
@@ -223,16 +196,13 @@ class UsuariosGrupoService:
         id_grupo: str,
         user_id: int
     ):
-        # 1. Validar grupo
         self.grupo_service.get_grupo(db, id_grupo)
 
-        # 2. Buscar relación
         user_rel = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
 
         if not user_rel:
             raise HTTPException(404, "No perteneces al grupo")
 
-        # 3. Eliminar
         self.usuarios_repo.delete(db, user_rel)
         db.commit()
 

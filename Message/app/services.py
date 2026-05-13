@@ -8,7 +8,6 @@ import requests
 def create_message(data, user):
     user_id = user.get("user_id")
 
-    # validar que pertenece al grupo
     if not user_in_group(user_id, data.chat_id, user.get("token")):
         return {"error": "No pertenece al grupo"}
 
@@ -24,11 +23,9 @@ def create_message(data, user):
         }
     }
 
-    # 💾 guardar en Mongo
     result = messages_collection.insert_one(message)
     message["_id"] = str(result.inserted_id)
 
-    # 🐇 evento RabbitMQ
     publish_event("messages", {
         "event": "message_sent",
         "data": {
@@ -83,14 +80,12 @@ def mark_message_as_read(message_id: str, user_id: str):
 
 def user_in_group(user_id: str, group_id: str, token: str):
     try:
-        # Apuntar al puerto 8002 (Servicio de Grupos)
         response = requests.get(
             f"http://127.0.0.1:8002/users-groups/{group_id}/usuarios",
             headers={"Authorization": f"Bearer {token}"}
         )
 
         if response.status_code != 200:
-            print("Error groups:", response.text)
             return False
 
         users = response.json()
@@ -98,5 +93,4 @@ def user_in_group(user_id: str, group_id: str, token: str):
         return any(str(u["id_usuario"]) == str(user_id) for u in users)
 
     except Exception as e:
-        print("Error en user_in_group:", e)
         return False

@@ -1,26 +1,19 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import FileResponse
-import uuid
 import os
+from dotenv import load_dotenv
 
-router = APIRouter()
+load_dotenv()
 
-MEDIA_DB = {}
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
+METADATA_FILE = os.getenv("METADATA_FILE", "media_metadata.json")
 
-UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 import uuid
-import os
 import json
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 
 router = APIRouter()
-
-UPLOAD_DIR = "uploads"
-METADATA_FILE = "media_metadata.json"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def load_metadata():
     if os.path.exists(METADATA_FILE):
@@ -35,14 +28,12 @@ def save_metadata(data):
     with open(METADATA_FILE, "w") as f:
         json.dump(data, f)
 
-# Cargar metadatos al iniciar
 MEDIA_DB = load_metadata()
 
 @router.post("/media/upload")
 async def upload_image(file: UploadFile = File(...), expected_views: int = 1):
     media_id = str(uuid.uuid4())
-    # Guardamos sin extensión para facilitar la recuperación por ID puro
-    file_path = f"{UPLOAD_DIR}/{media_id}"
+    file_path = os.path.join(UPLOAD_DIR, media_id)
 
     content = await file.read()
     with open(file_path, "wb") as f:
@@ -67,7 +58,6 @@ async def get_image(media_id: str, user_id: str):
     if not media:
         raise HTTPException(status_code=404, detail="El archivo no existe o ya fue eliminado")
 
-    # Normalizar user_id a string para la comparación
     u_id = str(user_id)
 
     if u_id in media["viewed_by"]:
@@ -78,20 +68,12 @@ async def get_image(media_id: str, user_id: str):
         save_metadata(MEDIA_DB)
         raise HTTPException(status_code=404, detail="Archivo físico no encontrado")
 
-    # Registrar visualización
     media["viewed_by"].append(u_id)
     
-    # Preparar la respuesta antes de borrar (si fuera necesario)
     response = FileResponse(media["path"], media_type=media["mime_type"])
 
-    # Si todos la vieron, autodestrucción
     if len(media["viewed_by"]) >= media["expected_views"]:
-        # Nota: En un sistema real usaríamos un background task para borrar el archivo
-        # después de que el FileResponse termine de enviarse.
-        # Por ahora lo mantenemos y una tarea de limpieza podría borrarlo luego, 
-        # o lo borramos del DB para que nadie más acceda.
         save_metadata(MEDIA_DB)
-        print(f"MEDIA: {media_id} marcada para eliminación (vistas completadas)")
     else:
         save_metadata(MEDIA_DB)
 

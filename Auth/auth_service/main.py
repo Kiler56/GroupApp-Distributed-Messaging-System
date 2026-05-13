@@ -3,13 +3,14 @@ from fastapi import FastAPI
 from auth_service.database import engine, Base, SessionLocal
 from auth_service import auth
 from fastapi.middleware.cors import CORSMiddleware
+from auth_service.config import AUTH_GRPC_PORT, ALLOWED_ORIGINS
 import threading
 import grpc
 import sys
 import os
 from concurrent import futures
 
-# Añadir el directorio actual al path para que gRPC encuentre los módulos generados
+# Path hack for grpc imports
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
@@ -21,7 +22,7 @@ from auth_service.models import User
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    # Arrancar servidor gRPC en un hilo aparte
+    # Run grpc server in background
     threading.Thread(target=serve_grpc, daemon=True).start()
     yield 
 
@@ -73,15 +74,14 @@ class AuthGRPCService(auth_pb2_grpc.AuthServiceServicer):
 def serve_grpc():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     auth_pb2_grpc.add_AuthServiceServicer_to_server(AuthGRPCService(), server)
-    server.add_insecure_port('[::]:50052')
+    server.add_insecure_port(f'[::]:{AUTH_GRPC_PORT}')
     server.start()
-    print("Auth gRPC server started on port 50052")
     server.wait_for_termination()
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import bcrypt
 
 def hash_password(password: str):

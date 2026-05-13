@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from sqlalchemy import Column, DateTime, Index, String, ForeignKey, Boolean, UniqueConstraint
 from uuid6 import uuid7
 from datetime import datetime

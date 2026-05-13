@@ -19,7 +19,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- WebSocket Management ---
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, List[WebSocket]] = {}
@@ -50,16 +49,13 @@ async def websocket_endpoint(websocket: WebSocket, chat_id: str):
     except WebSocketDisconnect:
         manager.disconnect(websocket, chat_id)
 
-# --- RabbitMQ to WebSocket Bridge ---
 def rabbit_callback(ch, method, properties, body):
     event_data = json.loads(body)
-    print("📩 Evento recibido de RabbitMQ:", event_data)
     
     if event_data.get("event") == "message_sent":
         data = event_data.get("data", {})
         chat_id = data.get("chat_id")
         
-        # Enviar al bridge asíncrono
         if chat_id:
             asyncio.run_coroutine_threadsafe(
                 manager.broadcast(chat_id, {"type": "new_message"}),
@@ -76,6 +72,5 @@ def start_rabbit_consumer():
     channel.basic_consume(queue="messages", on_message_callback=rabbit_callback)
     channel.start_consuming()
 
-# Event Loop para el bridge
 loop = asyncio.get_event_loop()
 threading.Thread(target=start_rabbit_consumer, daemon=True).start()

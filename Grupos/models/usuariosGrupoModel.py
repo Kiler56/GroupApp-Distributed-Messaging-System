@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from sqlalchemy import Column, DateTime, Index, String, ForeignKey, Boolean, UniqueConstraint
 from uuid6 import uuid7
 from datetime import datetime
@@ -17,10 +16,8 @@ class UsuariosGrupo(Base):
     id_usuario_grupo = Column(String, primary_key=True, default=lambda: str(uuid7()))
     id_grupo = Column(String, ForeignKey("grupo.id_grupo", ondelete="CASCADE"), nullable=False)
     
-    # La integridad se valida vía API.
     id_usuario = Column(String, nullable=False)
     
-    # La integridad se valida vía API ya que los roles están en otro MS.
     id_rol_grupo = Column(String, nullable=False)
     fecha_union = Column(DateTime, nullable=False, default=datetime.utcnow)
     id_estado = Column(String, ForeignKey("tipo_estado_usr_grp.id_estado"), nullable=False)

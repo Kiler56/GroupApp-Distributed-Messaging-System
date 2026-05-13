@@ -8,7 +8,7 @@ from Roles.repositories.rolRecursoRepository import RolRecursoRepository
 from Roles.models.recursoGrupoModel import RecursoGrupo
 from Roles.database import SessionLocal, engine, Base
 
-# Create tables
+# Initial schema sync
 Base.metadata.create_all(bind=engine)
 
 def seed_recursos():
@@ -22,6 +22,7 @@ def seed_recursos():
         ("MSG_DIR", "Enviar solicitudes de DM", "Permite contactar directamente a otros miembros")
     ]
     
+    # Seed default permissions if missing
     for id_rec, nombre, desc in recursos:
         if not db.query(RecursoGrupo).filter_by(id_recurso=id_rec).first():
             db.add(RecursoGrupo(id_recurso=id_rec, nombre_recurso=nombre, codigo_interno=id_rec))
@@ -32,7 +33,6 @@ def seed_recursos():
 seed_recursos()
 
 class RoleService(roles_pb2_grpc.RoleServiceServicer):
-    # ... (rest of the class remains the same)
     def __init__(self):
         self.rol_repo = RolGrupoRepository()
         self.rol_recurso_repo = RolRecursoRepository()
@@ -119,17 +119,14 @@ class RoleService(roles_pb2_grpc.RoleServiceServicer):
         return roles_pb2.DeleteRoleResponse(success=False)
 
     def AssignResourceToRole(self, request, context):
-        print(f"DEBUG: AssignResourceToRole called with role: {request.id_rol_grupo}, resource: {request.id_recurso}")
         db = SessionLocal()
         try:
-            # Verificar si ya existe
             existing = db.query(self.rol_recurso_repo.model).filter_by(
                 id_rol_grupo=request.id_rol_grupo, 
                 id_recurso=request.id_recurso
             ).first()
             
             if existing:
-                print(f"DEBUG: Relationship already exists with ID: {existing.id_rol_recurso}")
                 return roles_pb2.RoleResourceResponse(
                     id_rol_recurso=str(existing.id_rol_recurso),
                     id_rol_grupo=str(existing.id_rol_grupo),
@@ -141,7 +138,6 @@ class RoleService(roles_pb2_grpc.RoleServiceServicer):
                 "id_recurso": request.id_recurso
             }
             
-            # Crear instancia manual
             from Roles.models.rolRecursoModel import RolRecurso
             from uuid6 import uuid7
             
@@ -152,19 +148,16 @@ class RoleService(roles_pb2_grpc.RoleServiceServicer):
                 id_recurso=request.id_recurso
             )
             
-            print(f"DEBUG: Attempting to insert new relationship ID: {new_id}")
             db.add(rr)
             db.commit()
             db.refresh(rr)
             
-            print("DEBUG: Successfully inserted")
             return roles_pb2.RoleResourceResponse(
                 id_rol_recurso=str(rr.id_rol_recurso),
                 id_rol_grupo=str(rr.id_rol_grupo),
                 id_recurso=str(rr.id_recurso)
             )
         except Exception as e:
-            print(f"DEBUG ERROR: {str(e)}")
             db.rollback()
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(str(e))
@@ -216,7 +209,6 @@ def serve():
     roles_pb2_grpc.add_RoleServiceServicer_to_server(RoleService(), server)
     server.add_insecure_port(f'[::]:{port}')
     server.start()
-    print(f"Roles gRPC server started on port {port}")
     server.wait_for_termination()
 
 if __name__ == '__main__':

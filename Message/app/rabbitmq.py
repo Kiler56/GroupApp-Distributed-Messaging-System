@@ -1,10 +1,16 @@
 import pika
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+RABBITMQ_HOST = os.getenv("RABBITMQ_URL", "localhost")
 
 def publish_event(queue, message):
     try:
         connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='127.0.0.1')
+            pika.ConnectionParameters(host=RABBITMQ_HOST)
         )
 
         channel = connection.channel()
@@ -20,16 +26,14 @@ def publish_event(queue, message):
             )
         )
 
-        print("Evento enviado a RabbitMQ")
-
         connection.close()
 
     except Exception as e:
-        print("Error RabbitMQ:", e)
+        pass
 
 def consume_messages():
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='127.0.0.1')
+        pika.ConnectionParameters(host=RABBITMQ_HOST)
     )
 
     channel = connection.channel()
@@ -38,7 +42,6 @@ def consume_messages():
 
     def callback(ch, method, properties, body):
         message = json.loads(body)
-        print("📩 Evento recibido:", message)
 
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
@@ -47,5 +50,4 @@ def consume_messages():
         on_message_callback=callback
     )
 
-    print("🟢 Esperando mensajes...")
     channel.start_consuming()

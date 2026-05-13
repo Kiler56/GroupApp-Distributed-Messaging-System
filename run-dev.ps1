@@ -33,15 +33,11 @@ Write-Host "Arrancando Media Service en puerto 8003..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd MediaService; python -m uvicorn app.main:app --port 8003"
 
 
-# 5. Frontend de Mensajeria y Login - Puerto 5500
-
-Write-Host "Arrancando Frontend (Mensajes/Login) en puerto 5500..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Message/frontend; python -m http.server 5500"
-
-# 5. Frontend de Grupos - Puerto 5173
+# 5. Grupos Frontend - Puerto 5173
 Write-Host "Arrancando Grupos Frontend en puerto 5173..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd Grupos-front; npm install; npm run dev"
 
 Write-Host "----------------------------------------------------" -ForegroundColor Green
-Write-Host "LISTO! Accede a: http://localhost:5500/login.html" -ForegroundColor Green
+Write-Host "LISTO! Entorno iniciado." -ForegroundColor Green
 Write-Host "----------------------------------------------------" -ForegroundColor Green
+
