@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from Message.app.protos import auth_pb2 as Message_dot_app_dot_protos_dot_auth__pb2
+from app.protos import auth_pb2 as app_dot_protos_dot_auth__pb2
 
 GRPC_GENERATED_VERSION = '1.80.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in Message/app/protos/auth_pb2_grpc.py depends on'
+        + ' but the generated code in app/protos/auth_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -36,13 +36,13 @@ class AuthServiceStub(object):
         """
         self.GetUserByEmail = channel.unary_unary(
                 '/auth.AuthService/GetUserByEmail',
-                request_serializer=Message_dot_app_dot_protos_dot_auth__pb2.GetUserByEmailRequest.SerializeToString,
-                response_deserializer=Message_dot_app_dot_protos_dot_auth__pb2.UserResponse.FromString,
+                request_serializer=app_dot_protos_dot_auth__pb2.GetUserByEmailRequest.SerializeToString,
+                response_deserializer=app_dot_protos_dot_auth__pb2.UserResponse.FromString,
                 _registered_method=True)
         self.VerifyToken = channel.unary_unary(
                 '/auth.AuthService/VerifyToken',
-                request_serializer=Message_dot_app_dot_protos_dot_auth__pb2.VerifyTokenRequest.SerializeToString,
-                response_deserializer=Message_dot_app_dot_protos_dot_auth__pb2.VerifyTokenResponse.FromString,
+                request_serializer=app_dot_protos_dot_auth__pb2.VerifyTokenRequest.SerializeToString,
+                response_deserializer=app_dot_protos_dot_auth__pb2.VerifyTokenResponse.FromString,
                 _registered_method=True)
 
 
@@ -66,13 +66,13 @@ def add_AuthServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'GetUserByEmail': grpc.unary_unary_rpc_method_handler(
                     servicer.GetUserByEmail,
-                    request_deserializer=Message_dot_app_dot_protos_dot_auth__pb2.GetUserByEmailRequest.FromString,
-                    response_serializer=Message_dot_app_dot_protos_dot_auth__pb2.UserResponse.SerializeToString,
+                    request_deserializer=app_dot_protos_dot_auth__pb2.GetUserByEmailRequest.FromString,
+                    response_serializer=app_dot_protos_dot_auth__pb2.UserResponse.SerializeToString,
             ),
             'VerifyToken': grpc.unary_unary_rpc_method_handler(
                     servicer.VerifyToken,
-                    request_deserializer=Message_dot_app_dot_protos_dot_auth__pb2.VerifyTokenRequest.FromString,
-                    response_serializer=Message_dot_app_dot_protos_dot_auth__pb2.VerifyTokenResponse.SerializeToString,
+                    request_deserializer=app_dot_protos_dot_auth__pb2.VerifyTokenRequest.FromString,
+                    response_serializer=app_dot_protos_dot_auth__pb2.VerifyTokenResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -100,8 +100,8 @@ class AuthService(object):
             request,
             target,
             '/auth.AuthService/GetUserByEmail',
-            Message_dot_app_dot_protos_dot_auth__pb2.GetUserByEmailRequest.SerializeToString,
-            Message_dot_app_dot_protos_dot_auth__pb2.UserResponse.FromString,
+            app_dot_protos_dot_auth__pb2.GetUserByEmailRequest.SerializeToString,
+            app_dot_protos_dot_auth__pb2.UserResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -127,8 +127,8 @@ class AuthService(object):
             request,
             target,
             '/auth.AuthService/VerifyToken',
-            Message_dot_app_dot_protos_dot_auth__pb2.VerifyTokenRequest.SerializeToString,
-            Message_dot_app_dot_protos_dot_auth__pb2.VerifyTokenResponse.FromString,
+            app_dot_protos_dot_auth__pb2.VerifyTokenRequest.SerializeToString,
+            app_dot_protos_dot_auth__pb2.VerifyTokenResponse.FromString,
             options,
             channel_credentials,
             insecure,
