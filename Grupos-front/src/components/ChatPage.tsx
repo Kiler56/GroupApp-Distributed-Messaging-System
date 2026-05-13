@@ -94,7 +94,12 @@ export const ChatPage: React.FC = () => {
     if (!groupId) return;
     try {
       const msgs = await messageService.getMessages(groupId);
-      setMessages([...msgs].reverse());
+      if (Array.isArray(msgs)) {
+        setMessages([...msgs].reverse());
+      } else {
+        console.error('Error fetching messages: response is not an array', msgs);
+        setMessages([]);
+      }
     } catch (err) {
       console.error('Error fetching messages', err);
     }

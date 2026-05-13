@@ -79,9 +79,11 @@ def mark_message_as_read(message_id: str, user_id: str):
 
 
 def user_in_group(user_id: str, group_id: str, token: str):
+    import os
+    grupos_url = os.getenv("GRUPOS_API_URL", "http://127.0.0.1:8002")
     try:
         response = requests.get(
-            f"http://127.0.0.1:8002/users-groups/{group_id}/usuarios",
+            f"{grupos_url}/users-groups/{group_id}/usuarios",
             headers={"Authorization": f"Bearer {token}"}
         )
 
