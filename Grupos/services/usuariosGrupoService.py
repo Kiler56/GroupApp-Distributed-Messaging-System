@@ -20,29 +20,7 @@ class UsuariosGrupoService:
         data: UsuariosGrupoCreate,
         user_id: int
     ):
-        grupo = self.grupo_service.get_grupo(db, id_grupo)
-
-        user_rel = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
-
-        if not user_rel:
-            raise HTTPException(
-                status_code=403,
-                detail="No perteneces al grupo"
-            )
-
-        rol = self.roles_client.get_role_by_id(user_rel.id_rol_grupo)
-
-        if not rol:
-            raise HTTPException(
-                status_code=403,
-                detail="No tienes un rol válido asignado"
-            )
-
-        if rol.nombre != "Administrador":
-            raise HTTPException(
-                status_code=403,
-                detail="No eres administrador"
-            )
+        self.grupo_service.validate_admin(db, id_grupo, user_id)
 
         existing = self.usuarios_repo.get_one(
             db,
@@ -83,17 +61,7 @@ class UsuariosGrupoService:
         target_user_id: int,
         user_id: int
     ):
-        self.grupo_service.get_grupo(db, id_grupo)
-
-        user_rel = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
-
-        if not user_rel:
-           raise HTTPException(403, "No perteneces al grupo")
-
-        rol = self.roles_client.get_role_by_id(user_rel.id_rol_grupo)
-
-        if not rol or rol.nombre != "Administrador":
-          raise HTTPException(403, "No eres administrador")
+        self.grupo_service.validate_admin(db, id_grupo, user_id)
 
         target_rel = self.usuarios_repo.get_by_user_and_group(db, str(target_user_id), id_grupo)
 
@@ -117,17 +85,7 @@ class UsuariosGrupoService:
         data: UsuariosGrupoCreate, # Usamos este schema para id_rol_grupo
         user_id: int
     ):
-        self.grupo_service.get_grupo(db, id_grupo)
-
-        user_rel = self.usuarios_repo.get_by_user_and_group(db, str(user_id), id_grupo)
-
-        if not user_rel:
-           raise HTTPException(403, "No perteneces al grupo")
-
-        rol = self.roles_client.get_role_by_id(user_rel.id_rol_grupo)
-
-        if not rol or rol.nombre != "Administrador":
-          raise HTTPException(403, "No eres administrador")
+        self.grupo_service.validate_admin(db, id_grupo, user_id)
 
         target_rel = self.usuarios_repo.get_by_user_and_group(db, str(target_user_id), id_grupo)
 
