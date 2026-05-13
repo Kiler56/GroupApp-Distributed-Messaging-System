@@ -91,8 +91,10 @@ def user_in_group(user_id: str, group_id: str, token: str):
             return False
 
         users = response.json()
-
-        return any(str(u["id_usuario"]) == str(user_id) for u in users)
+        # Log para depuración si fuera necesario
+        # print(f"Checking user {user_id} in group {group_id}. Members: {[u['id_usuario'] for u in users]}")
+        
+        return any(str(u.get("id_usuario")) == str(user_id) for u in users)
 
     except Exception as e:
         return False
