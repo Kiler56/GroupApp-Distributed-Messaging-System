@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const MSG_URL = import.meta.env.VITE_MSG_URL || 'http://localhost:8001';
-const MEDIA_URL = import.meta.env.VITE_MEDIA_URL || 'http://localhost:8003';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+const MSG_URL = import.meta.env.VITE_MSG_URL;
+const MEDIA_URL = import.meta.env.VITE_MEDIA_URL;
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: MSG_URL,

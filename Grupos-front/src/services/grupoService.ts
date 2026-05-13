@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Grupo, GrupoCreate, GrupoUpdate } from '../types';
 
 // En Vite se usa import.meta.env
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: API_URL,
@@ -95,7 +95,7 @@ export const grupoService = {
   },
 
   addUserToGroup: async (id_grupo: string, id_usuario: number, id_rol_grupo: string): Promise<void> => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+    const baseUrl = import.meta.env.VITE_API_URL;
     await axios.post(`${baseUrl}/users-groups/${id_grupo}/usuarios`, {
         id_usuario: String(id_usuario),
         id_rol_grupo: id_rol_grupo,

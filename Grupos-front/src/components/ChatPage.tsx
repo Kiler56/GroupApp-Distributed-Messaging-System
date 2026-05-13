@@ -165,7 +165,8 @@ export const ChatPage: React.FC = () => {
   useEffect(() => {
     if (!groupId) return;
 
-    const wsUrl = `ws://localhost:8001/ws/${groupId}`;
+    const wsBaseUrl = import.meta.env.VITE_WS_URL;
+    const wsUrl = `${wsBaseUrl}/ws/${groupId}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = (event) => {
@@ -390,7 +391,7 @@ export const ChatPage: React.FC = () => {
 
         if (adminRole) {
             // 3. Añadir al otro usuario como Admin
-            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8002';
+            const API_URL = import.meta.env.VITE_API_URL;
             await axios.post(`${API_URL}/users-groups/${newGroup.id_grupo}/usuarios`, {
                 id_usuario: String(targetUser.id_usuario),
                 id_rol_grupo: adminRole.id_rol_grupo,
